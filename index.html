@@ -365,6 +365,11 @@ h2.h{font-size:15px;margin:6px 0 0;color:var(--muted);font-weight:700}
     <p id="bk-msg" class="hint" role="status"></p>
   </div>
   <div class="card2">
+    <h2>動作確認用のサンプル</h2>
+    <p class="hint">架空のチーム「みどり台スターズ」の名簿12人、ライブ記録の試合4試合、写真から取り込んだ試合1試合、課題とフォームの静止画を入れます。自分の名簿や記録とは別のチームとして入り、消すときもサンプルだけが消えます。</p>
+    <div class="hrow"><button class="btn" data-act="sample-load">サンプルを入れる</button><button class="btn" data-act="sample-clear">サンプルを消す</button></div>
+  </div>
+  <div class="card2">
     <h2>このアプリについて</h2>
     <p class="hint">ログインは不要で、入力した名前や写真がこの端末の外に送られることはありません。ホーム画面に追加すると、電波のないグラウンドでも開けます。</p>
     <button class="link danger" id="bk-wipe">この端末の記録をすべて消す</button>
@@ -733,10 +738,11 @@ function viewHome(){
   const rec=seasonRecord();
   if(rec.w+rec.l+rec.d)h+='<div class="season"><span>今シーズン</span><b>'+rec.w+'勝 '+rec.l+'敗'+(rec.d?' '+rec.d+'分':'')+'</b><small>自チームを設定した試合を集計しています</small></div>';
   h+='<div class="hrow"><button class="btn primary" data-act="new">⚾ 試合を記録する</button>'+(App.sample?'<button class="btn" data-act="photo">📷 紙のスコアを取り込む</button>':'')+'</div>';
+  if(SAMPLE.has())h+='<p class="banner">サンプルの記録が入っています（名前はすべて架空です）。<button class="link" data-act="sample-clear">サンプルを消す</button></p>';
   if(!ROSTER.teams.length&&!App.loading)h+='<p class="banner">はじめに「名簿・設定」で選手を登録してください。打順の入力が名簿から選ぶだけになり、試合の成績が選手カルテに貯まります。<button class="link" data-act="nav" data-v="roster">名簿を登録する</button></p>';
   const ids=Object.keys(games).sort((a,b)=>String(games[b].date||'').localeCompare(String(games[a].date||''))||(games[b].created||0)-(games[a].created||0));
   if(App.loading)h+='<p class="empty">読み込み中…</p>';
-  else if(!ids.length)h+='<p class="empty">まだ試合がありません。</p>';
+  else if(!ids.length)h+='<p class="empty">まだ試合がありません。</p><div class="place"><p><b>まず試してみたいときは</b></p><p class="hint">架空のチームの名簿・試合4試合・フォーム記録を入れて、すべての画面を確かめられます。自分の記録とは分けて入り、いつでも消せます。</p><button class="btn" data-act="sample-load">サンプルを入れて試す</button></div>';
   else{
     h+='<ul class="games">';
     ids.forEach(id=>{
@@ -1412,6 +1418,150 @@ const BK=(()=>{
   };
   return {info};
 })();
+</script>
+<script>
+/* ================= sample data: a made-up team to try every screen, added only on request and removable in one tap ================= */
+const SAMPLE=(()=>{
+  const TEAM='sample-team';
+  const OURS=[['1','青木',8],['6','石川',6],['4','上田',4],['3','遠藤',3],['5','大野',5],['7','加藤',7],['9','木村',9],['2','佐藤',2],['10','清水',1],['8','高橋',0],['11','中村',0],['12','山口',0]];
+  const OPP=[['小林',8],['斎藤',6],['松本',4],['井上',3],['林',5],['森',7],['池田',9],['橋本',2],['山下',1]];
+  const has=()=>!!rTeam(TEAM)||Object.values(games).some(g=>g.sample);
+  const pid=no=>'sample-p'+no;
+  // small seeded random so the sample is the same every time
+  function rng(seed){let a=seed>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+  function dayAgo(n){const d=new Date(Date.now()-n*864e5);const p=x=>String(x).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
+  const pick=(r,arr)=>arr[Math.floor(r()*arr.length)];
+  function wpick(r,table){let s=0;for(const[,w]of table)s+=w;let x=r()*s;for(const[k,w]of table){x-=w;if(x<0)return k;}return table[table.length-1][0];}
+  const HOME=[150,246];
+  function spot(f,k,r){const [x,y]=FP[f];const jx=(r()-.5)*28,jy=(r()-.5)*20;
+    return {x:Math.max(10,Math.min(290,HOME[0]+(x-HOME[0])*k+jx)),y:Math.max(10,Math.min(276,HOME[1]+(y-HOME[1])*k+jy))};}
+  // pitches before the deciding pitch: never reaching 4 balls or 3 strikes
+  function pre(r,maxB,maxS){const out=[];let b=0,s=0;const n=Math.floor(r()*5);
+    for(let i=0;i<n;i++){const t=r();if(t<.42&&b<maxB){out.push('B');b++;}else if(t<.75&&s<maxS){out.push(r()<.5?'C':'S');s++;}else if(s>=1){out.push('F');if(s<2)s++;}}
+    return {seq:out,b,s};}
+  // play one game with the real scoring engine, one plate appearance at a time
+  function sim(seed,lu,power){
+    const r=rng(seed),ev=[],g={lu,ev,teams:['a','b']};let guard=0,subbed=false;
+    const OUT=[['K',17],['BB',10],['HBP',2],['1B',17],['2B',5],['3B',1.5],['HR',1],['GO',23],['FO',15],['LO',4],['E',4.5]];
+    while(guard++<400){
+      const S=replay(g);
+      if(S.ended)break;
+      if(S.inn>6||(S.inn===6&&S.half===1&&S.R[1]>S.R[0])){ev.push({t:'end'});break;}
+      // one pinch hitter for our side in the 5th, to show a substitution
+      if(!subbed&&S.inn===5&&S.half===lu.myHalf&&S.outs===0&&S.b===0&&S.s===0){subbed=true;
+        const i=S.cur.i;ev.push({t:'sub',tm:lu.myHalf,i,n:OURS[9][1],p:S.lu[lu.myHalf][i].p,pid:pid(OURS[9][0])});continue;}
+      if(S.bases[1]&&!S.bases[2]&&S.outs<2&&r()<.13){ev.push({t:'run',k:r()<.8?'SB':'WP',from:1,to:2});continue;}
+      const strong=S.half===lu.myHalf?power:1-power;
+      const tab=OUT.map(([k,w])=>[k,['1B','2B','3B','HR','BB'].includes(k)?w*(0.6+strong*0.8):k==='K'?w*(1.4-strong*0.8):w]);
+      let o=wpick(r,tab);
+      if(o==='K'){const p=pre(r,3,2);ev.push(...p.seq.map(k=>({t:'p',k})));for(let s=p.s;s<3;s++)ev.push({t:'p',k:r()<.5?'C':'S'});continue;}
+      if(o==='BB'){const p=pre(r,0,2);ev.push(...p.seq.map(k=>({t:'p',k})));for(let b=0;b<4;b++){ev.push({t:'p',k:'B'});if(b<3&&r()<.25)ev.push({t:'p',k:'F'});}continue;}
+      if(o==='HBP'){ev.push({t:'hbp'});continue;}
+      const p=pre(r,3,2);ev.push(...p.seq.map(k=>({t:'p',k})));
+      if(o==='GO'&&S.bases[1]&&S.outs<2&&r()<.3)o='DP';
+      if(o==='FO'&&S.bases[3]&&S.outs<2&&r()<.55)o='SF';
+      let f,k;
+      if(['1B','2B','3B','HR'].includes(o)){f=o==='1B'&&r()<.12?pick(r,[5,6,4]):pick(r,[7,8,9,7,9]);k={'1B':1.05,'2B':1.25,'3B':1.35,'HR':1.6}[o];}
+      else if(o==='FO'||o==='SF'){f=pick(r,[7,8,9,8,6,4]);k=1;}
+      else if(o==='LO'){f=pick(r,[1,3,4,5,6,7,8,9]);k=.9;}
+      else{f=pick(r,[6,6,4,4,5,3,1]);k=.95;}
+      const d=defaults(o,S.bases),pt=spot(f,k,r),e={t:'bip',res:o,b:d.b,f,x:Math.round(pt.x),y:Math.round(pt.y)};
+      if(Object.keys(d.r).length)e.r=d.r;
+      ev.push(e);
+    }
+    return ev;
+  }
+  function lineups(myHalf){
+    const ours=OURS.slice(0,9).map(([no,n,p])=>({n,p,pid:pid(no)}));
+    const opp=OPP.map(([n,p])=>({n,p,pid:''}));
+    const lu=myHalf===0?[ours,opp]:[opp,ours];lu.myHalf=myHalf;return lu;
+  }
+  // a still for the form card, drawn here so the sample carries no image files
+  function still(after){
+    const c=document.createElement('canvas');c.width=720;c.height=960;const x=c.getContext('2d');
+    const gr=x.createLinearGradient(0,0,0,960);gr.addColorStop(0,'#6f8fa8');gr.addColorStop(.62,'#9fb6c4');gr.addColorStop(.62,'#7a9e6a');gr.addColorStop(1,'#5d8452');
+    x.fillStyle=gr;x.fillRect(0,0,720,960);
+    x.fillStyle='rgba(255,255,255,.85)';x.font='bold 30px sans-serif';x.fillText('サンプル画像',24,48);
+    // a simple batter, front shoulder open (before) or closed (after)
+    const hip=[360,600],sh=after?[390,420]:[330,420],head=[after?400:345,350];
+    x.strokeStyle='#1b2a33';x.lineWidth=26;x.lineCap='round';x.lineJoin='round';
+    x.beginPath();x.moveTo(...hip);x.lineTo(...sh);x.stroke();
+    x.beginPath();x.arc(head[0],head[1],46,0,7);x.fillStyle='#1b2a33';x.fill();
+    x.beginPath();x.moveTo(hip[0],hip[1]);x.lineTo(after?300:280,780);x.lineTo(after?290:250,900);x.stroke();
+    x.beginPath();x.moveTo(hip[0],hip[1]);x.lineTo(450,770);x.lineTo(470,900);x.stroke();
+    x.beginPath();x.moveTo(sh[0],sh[1]);x.lineTo(sh[0]+(after?90:120),sh[1]+40);x.lineTo(sh[0]+(after?150:190),sh[1]-40);x.stroke();
+    x.strokeStyle='#c9a46b';x.lineWidth=14;x.beginPath();x.moveTo(sh[0]+(after?150:190),sh[1]-40);x.lineTo(sh[0]+(after?120:250),sh[1]-230);x.stroke();
+    // drawings like the form tool makes
+    x.strokeStyle='#ffd23f';x.fillStyle='#ffd23f';x.lineWidth=6;
+    x.beginPath();x.moveTo(...hip);x.lineTo(...sh);x.lineTo(sh[0],sh[1]-160);x.stroke();
+    [hip,sh,[sh[0],sh[1]-160]].forEach(q=>{x.beginPath();x.arc(q[0],q[1],10,0,7);x.fill();});
+    const deg=after?'10°':'22°';x.font='bold 46px sans-serif';x.lineWidth=7;x.strokeStyle='#000';x.strokeText(deg,sh[0]+24,sh[1]-20);x.fillText(deg,sh[0]+24,sh[1]-20);
+    return new Promise(ok=>c.toBlob(ok,'image/jpeg',.85));
+  }
+  async function load(){
+    if(has()){toast('サンプルはもう入っています');return;}
+    const team={id:TEAM,name:'（サンプル）みどり台スターズ',players:OURS.map(([no,n])=>({id:pid(no),number:no,name:n,nick:'',left:false}))};
+    const R=clone(ROSTER);R.teams.push(team);
+    const plan=[
+      {d:28,name:'練習試合',opp:'ひばりヶ丘ジャガーズ',my:0,seed:11,power:.62},
+      {d:21,name:'市民大会 1回戦',opp:'さくら台ボーイズ',my:1,seed:23,power:.58},
+      {d:14,name:'市民大会 2回戦',opp:'東町ホークス',my:0,seed:41,power:.40},
+      {d:7,name:'練習試合',opp:'ひばりヶ丘ジャガーズ',my:1,seed:57,power:.66}
+    ];
+    const G={};
+    plan.forEach((p,i)=>{
+      const lu=lineups(p.my),ev=sim(p.seed,lu,p.power);
+      const ours='（サンプル）みどり台',teams=p.my===0?[ours,p.opp]:[p.opp,ours];
+      G['sample-g'+i]={kind:'live',sample:true,name:p.name,date:dayAgo(p.d),teams,my:p.my,rt:TEAM,lu:[lu[0],lu[1]],ev,created:Date.now()-p.d*864e5,upd:Date.now()-p.d*864e5};
+    });
+    // one game as if read from a paper scorebook photo
+    const res=(i,l,t,rbi,run)=>({i,l,t,rbi:rbi||0,run:!!run,u:false});
+    G['sample-photo']={kind:'photo',sample:true,name:'（写真から取り込みの例）',date:dayAgo(3),teams:['（サンプル）みどり台','西小フレンズ'],my:0,rt:TEAM,
+      line:[[1,0,2,0,0,1],[0,1,0,0,2,0]],R:[4,3],H:[6,4],E:[1,2],
+      bat:[
+        {pid:pid('1'),name:'青木',order:1,pos:'中',pa:4,ab:3,h:2,d2:1,d3:0,hr:0,rbi:0,r:2,bb:1,k:0,sb:0,sf:0,res:[res(1,'左2','hit',0,1),res(3,'四球','walk',0,1),res(4,'遊ゴ','out'),res(6,'中安','hit')]},
+        {pid:pid('6'),name:'石川',order:2,pos:'遊',pa:3,ab:2,h:0,d2:0,d3:0,hr:0,rbi:0,r:0,bb:0,k:1,sb:0,sf:0,res:[res(1,'犠打','sac'),res(3,'三振','strikeout'),res(5,'二ゴ','out')]},
+        {pid:pid('4'),name:'上田',order:3,pos:'二',pa:3,ab:3,h:1,d2:0,d3:0,hr:0,rbi:2,r:0,bb:0,k:0,sb:0,sf:0,res:[res(1,'右飛','out'),res(3,'右安','hit',2),res(5,'中飛','out')]},
+        {pid:pid('3'),name:'遠藤',order:4,pos:'一',pa:3,ab:3,h:2,d2:0,d3:0,hr:0,rbi:2,r:1,bb:0,k:0,sb:0,sf:0,res:[res(1,'中安','hit',1),res(4,'三振','strikeout'),res(6,'左安','hit',1,1)]},
+        {pid:pid('5'),name:'大野',order:5,pos:'三',pa:3,ab:3,h:1,d2:0,d3:0,hr:0,rbi:0,r:1,bb:0,k:1,sb:0,sf:0,res:[res(2,'三振','strikeout'),res(4,'左安','hit',0,1),res(6,'投ゴ','out')]}
+      ],
+      pit:[{pid:pid('10'),name:'清水',outs:18,np:94,h:4,bb:3,k:6,r:3}],
+      hl:['1回、遠藤の中安で青木が生還して先制した。','3回、上田の右安で2点を追加した。','6回、遠藤の左安で勝ち越した。'],created:Date.now()-3*864e5,upd:Date.now()-3*864e5};
+    const P={},N={},IMG=[];
+    P[pid('6')]={goal:'ステップしたときに前の肩が早く開く。トップで「ため」をつくって、肩を閉じたまま振り出す。',gupd:Date.now()-10*864e5};
+    P[pid('10')]={goal:'四球を減らす。セットからの踏み出しを一定にする。',gupd:Date.now()-5*864e5};
+    const [b1,b2]=await Promise.all([still(false),still(true)]);
+    IMG.push(['sample-i1',b1],['sample-i2',b2]);
+    N['sample-n1']={sample:true,pid:pid('6'),kind:'打撃',memo:'前の肩が開いて、バットが遠回りしている（肩のライン22°）。',img:'sample-i1',gid:'sample-g1',date:dayAgo(20),created:Date.now()-20*864e5};
+    N['sample-n2']={sample:true,pid:pid('6'),kind:'打撃',memo:'素振りでトップを意識。肩の開きが10°まで小さくなった。',img:'sample-i2',gid:'sample-g3',date:dayAgo(6),created:Date.now()-6*864e5};
+    try{
+      await idbPut('kv','roster',clone(R));
+      for(const[k,v]of Object.entries(G))await idbPut('games',k,v);
+      for(const[k,v]of Object.entries(P))await idbPut('pmeta',k,v);
+      for(const[k,b]of IMG)await idbPut('images',k,b);
+      for(const[k,v]of Object.entries(N))await idbPut('notes',k,v);
+    }catch(e){toast('サンプルを入れられませんでした（空き容量を確認してください）');await clear(true);return;}
+    ROSTER=normRoster(R);ROSTER._v=Date.now();Object.assign(games,G,{});Object.assign(pmeta,P);Object.assign(notes,N);
+    toast('サンプルを入れました');renderView();
+  }
+  async function clear(silent){
+    const R=clone(ROSTER);R.teams=R.teams.filter(t=>t.id!==TEAM);
+    const gids=Object.keys(games).filter(k=>games[k].sample),nids=Object.keys(notes).filter(k=>notes[k].sample||String(notes[k].pid).startsWith('sample-p'));
+    const imgs=nids.map(k=>notes[k].img).filter(Boolean),mids=Object.keys(pmeta).filter(k=>k.startsWith('sample-p'));
+    try{
+      await idbPut('kv','roster',clone(R));
+      for(const k of gids)await idbDel('games',k);
+      for(const k of nids)await idbDel('notes',k);
+      for(const k of mids)await idbDel('pmeta',k);
+      for(const k of imgs)await delImage(k);
+    }catch(e){if(!silent)toast('サンプルを消せませんでした');return;}
+    ROSTER=normRoster(R);ROSTER._v=Date.now();gids.forEach(k=>delete games[k]);nids.forEach(k=>delete notes[k]);mids.forEach(k=>delete pmeta[k]);
+    if(ui.gid&&!games[ui.gid])ui.gid=null;if(PV.pid&&!findPlayer(PV.pid))PV.pid=null;
+    if(!silent){toast('サンプルを消しました');renderView();}
+  }
+  return {load,clear,has,TEAM};
+})();
+Object.assign(acts,{'sample-load'(){SAMPLE.load();},'sample-clear'(){ui.conf={msg:'サンプルの名簿・試合・フォーム記録を消しますか？自分で入れた記録は消えません。',yes:'サンプルを消す',fn(){SAMPLE.clear();}};openSheet('confirm');}});
 </script>
 <script>
 /* ================= photo import (only inside claude.ai, where Claude can read the photo) ================= */

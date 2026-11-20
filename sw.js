@@ -1,6 +1,6 @@
 // オフラインでも開けるように、アプリ本体をこの端末に保存しておく。
 // アプリを更新したときは、VERSION の数字を1つ上げてください。
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE = 'team-baseball-note-' + VERSION;
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
