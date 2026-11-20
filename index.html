@@ -408,7 +408,7 @@ function normRoster(d){
   return {clubName:String(d.clubName||''),aliases:(Array.isArray(d.aliases)?d.aliases:[]).map(String).filter(Boolean),
     opponents:(Array.isArray(d.opponents)?d.opponents:[]).map(x=>String(x).trim()).filter(Boolean),
     teams:teams.map((t,i)=>{const tid=String(t.id||('t'+i));return {id:tid,name:String(t.name||''),
-      players:(Array.isArray(t.players)?t.players:[]).map(p=>({id:String(p.id||(tid+'_'+(p.name||''))),number:String(p.number==null?'':p.number),name:String(p.name||''),nick:String(p.nick||'')}))};})};
+      players:(Array.isArray(t.players)?t.players:[]).map(p=>({id:String(p.id||(tid+'_'+(p.name||''))),number:String(p.number==null?'':p.number),name:String(p.name||''),nick:String(p.nick||''),left:!!p.left}))};})};
 }
 const rTeam=id=>ROSTER.teams.find(t=>t.id===id)||null;
 function findPlayer(pid){for(const t of ROSTER.teams){const p=t.players.find(x=>x.id===pid);if(p)return {p,t};}return null;}
@@ -417,7 +417,19 @@ function pidByName(team,name){
   const p=team.players.find(x=>x.name===n)||team.players.find(x=>x.nick&&x.nick===n);
   return p?p.id:'';
 }
-const pLabel=p=>(digits(p.number)!==''?'#'+digits(p.number)+' ':'')+p.name;
+const pLabel=p=>(digits(p.number)!==''?'#'+digits(p.number)+' ':'')+p.name+(p.left?'（退団）':'');
+// every player id that any saved record points at: games, form notes, goals
+function usedPids(){
+  const s=new Set();
+  Object.keys(games).forEach(id=>{const g=games[id];
+    (g.lu||[]).forEach(L=>(L||[]).forEach(p=>{if(p&&p.pid)s.add(p.pid);}));
+    (g.ev||[]).forEach(e=>{if(e&&e.t==='sub'&&e.pid)s.add(e.pid);});
+    (g.bat||[]).forEach(b=>{if(b.pid)s.add(b.pid);});(g.pit||[]).forEach(b=>{if(b.pid)s.add(b.pid);});
+    const L=gameLines(id);if(L){L.bat.forEach(b=>{if(b.pid)s.add(b.pid);});L.pit.forEach(b=>{if(b.pid)s.add(b.pid);});}});
+  Object.values(notes).forEach(n=>{if(n.pid)s.add(n.pid);});
+  Object.keys(pmeta).forEach(k=>{if(pmeta[k]&&pmeta[k].goal)s.add(k);});
+  return s;
+}
 
 /* ---- IndexedDB ---- */
 const IDB={db:null};
@@ -457,14 +469,14 @@ function saveDoc(path,data){
   const [coll,id]=path.split('/');
   META.lastChange=Date.now();idbPut('kv','meta',META).catch(()=>{});
   askPersist();
-  if(coll==='team'){return idbPut('kv','roster',clone(data)).catch(writeErr);}
-  if(data===null)return idbDel(coll,id).catch(writeErr);
-  return idbPut(coll,id,clone(data)).catch(writeErr);
+  const job=coll==='team'?idbPut('kv','roster',clone(data)):data===null?idbDel(coll,id):idbPut(coll,id,clone(data));
+  // callers decide what to undo; the toast tells the person it did not stick
+  return job.catch(e=>{writeErr(e);throw e;});
 }
 function delDoc(path){return saveDoc(path,null);}
 function writeErr(e){
   if(App.memOnly)return;
-  toast(e&&e.name==='QuotaExceededError'?'端末の空き容量が足りず、保存できませんでした':'この端末に保存できませんでした');
+  toast(e&&e.name==='QuotaExceededError'?'端末の空き容量が足りず、保存できませんでした。開き直すと直前の操作は消えています':'この端末に保存できませんでした。開き直すと直前の操作は消えています');
 }
 let persistAsked=false;
 function askPersist(){if(persistAsked)return;persistAsked=true;try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});}catch(e){}}
@@ -886,7 +898,7 @@ function lineupTab(g,S){
     if(team){
       const known=team.players.some(p=>p.id===r.pid);
       who='<select id="lu-n-'+i+'" data-lu="pid" data-i="'+i+'" aria-label="'+(i+1)+'番の選手"><option value="">選手を選ぶ</option>'+
-        team.players.map(p=>'<option value="'+esc(p.id)+'"'+(p.id===r.pid?' selected':'')+'>'+esc(pLabel(p))+'</option>').join('')+
+        team.players.filter(p=>!p.left||p.id===r.pid).map(p=>'<option value="'+esc(p.id)+'"'+(p.id===r.pid?' selected':'')+'>'+esc(pLabel(p))+'</option>').join('')+
         (!known&&r.n?'<option value="" selected>'+esc(r.n)+'（名簿外）</option>':'')+'</select>';
     }else who='<input id="lu-n-'+i+'" data-lu="n" data-i="'+i+'" maxlength="20" aria-label="'+(i+1)+'番の名前" placeholder="'+(i+1)+'番の名前" value="'+esc(r.n)+'">';
     h+='<li><span class="ord">'+(i+1)+'</span>'+who+
@@ -987,9 +999,10 @@ function renderSheet(){
     h+='<h3>走者の動き</h3>';
     if(occ.length>1)h+='<h4>どの走者</h4><div class="chips">'+occ.map(k=>'<button class="chip'+(r.from===k?' on':'')+'" data-act="rs-from" data-v="'+k+'">'+k+'塁 '+esc(pname(S.lu[bt][S.bases[k].i],S.bases[k].i))+'</button>').join('')+'</div>';
     else h+='<h4>'+r.from+'塁走者　'+esc(pname(S.lu[bt][S.bases[r.from].i],S.bases[r.from].i))+'</h4>';
+    if(r.blocked)h+='<p class="warnt">'+r.blocked+'塁へは進めません（前の塁に走者がいます）。どうなったかを選んでください。</p>';
     h+='<h4>どうなった</h4><div class="chips">'+opts.map(v=>'<button class="chip'+(r.to===v?' on':'')+'" data-act="rs-to" data-v="'+v+'">'+(v===0?'アウト':v===4?'生還':v+'塁へ')+'</button>').join('')+'</div>'+
       '<h4>理由</h4><div class="chips">'+(r.to===0?['CS','PO']:['SB','WP','PB','BK','ADV']).map(k=>'<button class="chip'+(r.k===k?' on':'')+'" data-act="rs-k" data-v="'+k+'">'+(k==='ADV'?'その他の進塁':RUNK[k])+'</button>').join('')+'</div>'+
-      '<div class="hrow"><button class="btn" data-act="sheet-close">やめる</button><button class="btn primary" data-act="rs-ok">確定</button></div>';
+      '<div class="hrow"><button class="btn" data-act="sheet-close">やめる</button><button class="btn primary" data-act="rs-ok"'+(r.to==null?' disabled':'')+'>確定</button></div>';
   }else if(ui.sheet==='new'){
     const def=ROSTER.teams[0]?ROSTER.teams[0].id:'';
     h+='<h3>新しい試合</h3>'+
@@ -1005,12 +1018,15 @@ function renderSheet(){
   s.innerHTML=h+'</div>';s.hidden=false;
 }
 function runOpts(S,from){const o=[];let k=from+1;for(;k<=3;k++){if(S.bases[k])break;o.push(k);}if(k>3)o.push(4);o.push(0);return o;}
-function fixRs(){const r=ui.rs,o=runOpts(ui.S,r.from);if(!o.includes(r.to))r.to=o[0];
-  const outK=r.k==='CS'||r.k==='PO';if(r.to===0&&!outK)r.k='CS';if(r.to!==0&&outK)r.k='SB';}
+function fixRs(){const r=ui.rs,o=runOpts(ui.S,r.from);
+  if(r.to!=null&&!o.includes(r.to)){r.blocked=r.to>0?r.to:null;r.to=null;}
+  if(r.to==null&&r.auto&&o[0]!==0)r.to=o[0];
+  r.auto=false;
+  const outK=r.k==='CS'||r.k==='PO';if(r.to===0&&!outK)r.k='CS';if(r.to!=null&&r.to!==0&&outK)r.k='SB';}
 function openRun(from,to){
   const S=ui.S;if(!canInput())return;const occ=[1,2,3].filter(k=>S.bases[k]);if(!occ.length)return;
   if(!from||!S.bases[from])from=occ[occ.length-1];
-  ui.rs={from,to:to==null?-1:to,k:'SB'};fixRs();openSheet('run');
+  ui.rs={from,to:to==null?null:to,auto:to==null,k:'SB',blocked:null};fixRs();openSheet('run');
 }
 function afterPlace(){
   const S=ui.S,d=defaults(ui.pend.res,S.bases);ui.pend.b=d.b;ui.pend.r=d.r;ui.mode='idle';
@@ -1026,6 +1042,7 @@ function saveLineup(){
   const g=games[ui.gid],d=ui.luDraft;if(!g||!d)return;const t=d.t,used={};
   for(const r of d.rows){if(r.p>=1&&r.p<=9){if(used[r.p]){toast('守備位置「'+POS[r.p]+'」が2人います');return;}used[r.p]=1;}}
   const rows=d.rows.map(r=>({n:String(r.n||'').trim().slice(0,20),p:r.p|0,pid:String(r.pid||'')}));
+  if((g.ev||[]).length&&rows.length!==ui.S.lu[t].length){toast('試合が始まったあとは、打者の人数は変えられません');ui.luDraft=null;render();return;}
   g.teams=[ui.S.teams[0],ui.S.teams[1]];g.teams[t]=(String(d.name||'').trim()||g.teams[t]).slice(0,20);
   if(!(g.ev||[]).length){g.lu=[ui.S.lu[0],ui.S.lu[1]];g.lu[t]=rows;}
   else{const cur=ui.S.lu[t],subs=[];rows.forEach((r,i)=>{if(cur[i]&&(cur[i].n!==r.n||cur[i].p!==r.p||cur[i].pid!==r.pid))subs.push({t:'sub',tm:t,i,n:r.n,p:r.p,pid:r.pid});});g.ev=g.ev.concat(subs);}
@@ -1059,10 +1076,10 @@ const acts={
   'adv-ok'(){if(!destConflict(ui.pend.b,ui.pend.r))commitBip();},
   'adv-cancel'(){ui.pend=null;closeSheet();render();},
   runner(){openRun();},
-  'rs-from'(el){ui.rs.from=+el.dataset.v;ui.rs.to=-1;fixRs();renderSheet();},
-  'rs-to'(el){ui.rs.to=+el.dataset.v;fixRs();renderSheet();},
+  'rs-from'(el){ui.rs.from=+el.dataset.v;ui.rs.to=null;ui.rs.auto=true;ui.rs.blocked=null;fixRs();renderSheet();},
+  'rs-to'(el){ui.rs.to=+el.dataset.v;ui.rs.blocked=null;fixRs();renderSheet();},
   'rs-k'(el){ui.rs.k=el.dataset.v;renderSheet();},
-  'rs-ok'(){const r=ui.rs;closeSheet();pushEv({t:'run',k:r.k,from:r.from,to:r.to});},
+  'rs-ok'(){const r=ui.rs;if(r.to==null)return;closeSheet();pushEv({t:'run',k:r.k,from:r.from,to:r.to});},
   end(){ui.conf={msg:'この試合を終了しますか？',yes:'終了する',fn(){pushEv({t:'end'});}};openSheet('confirm');},
   del(){ui.conf={msg:'この試合を削除しますか？選手カルテの成績からも消えます。元に戻せません。',yes:'削除する',fn(){const id=ui.gid;ui.gid=null;delete games[id];delDoc('games/'+id).catch(()=>{});render();}};openSheet('confirm');},
   'conf-ok'(){const fn=ui.conf&&ui.conf.fn;closeSheet();if(fn)fn();},
@@ -1085,7 +1102,7 @@ function luInput(el){
   if(el.dataset.lu==='team')ui.luDraft.name=el.value;
   else{const r=ui.luDraft.rows[+el.dataset.i];if(!r)return;
     if(el.dataset.lu==='n')r.n=el.value;
-    else if(el.dataset.lu==='pid'){r.pid=el.value;const f=findPlayer(el.value);r.n=f?f.p.name:r.n;}
+    else if(el.dataset.lu==='pid'){r.pid=el.value;const f=findPlayer(el.value);r.n=f?f.p.name:'';}
     else r.p=+el.value;}
 }
 document.addEventListener('input',ev=>luInput(ev.target));
@@ -1107,6 +1124,7 @@ function moveTok(g,pt){g.setAttribute('transform','translate('+pt.x.toFixed(1)+'
 function bindField(){
   const svg=I('field');if(!svg)return;
   svg.addEventListener('pointerdown',ev=>{
+    if(ui.drag)return;
     const tok=ev.target.closest('[data-f],[data-rn]');const pt=svgPt(svg,ev);
     if(ui.mode==='place'){
       let f=tok&&tok.dataset.f?+tok.dataset.f:0;
@@ -1179,14 +1197,16 @@ function renderPlayers(){
   if(!rTeam(PV.team))PV.team=ROSTER.teams[0].id;
   if(ROSTER.teams.length>1)h+='<div class="chips">'+ROSTER.teams.map(t=>'<button class="chip'+(t.id===PV.team?' on':'')+'" data-act="p-team" data-t="'+esc(t.id)+'">'+esc(t.name||'（呼び名なし）')+'</button>').join('')+'</div>';
   const team=rTeam(PV.team);
-  const list=team.players.filter(p=>p.name).slice().sort((a,b)=>(+digits(a.number)||999)-(+digits(b.number)||999));
-  h+='<div class="pgrid">';
-  list.forEach(p=>{
+  const numKey=p=>{const d=digits(p.number);return d===''?999:+d;};
+  const card=p=>{
     const rows=playerRows(p.id),s=sumBat(rows.filter(r=>r.b).map(r=>r.b)),nn=notesOf(p.id).length;
     const goal=pmeta[p.id]&&pmeta[p.id].goal;
-    h+='<button class="pcard" data-act="p-open" data-pid="'+esc(p.id)+'"><span class="no">'+esc(digits(p.number)||'-')+'</span><span class="pn">'+esc(p.name)+'</span>'+
-      '<small>'+(rows.length?rows.length+'試合 打率'+f3(s.avg):'試合の記録なし')+(nn?'・🎥'+nn:'')+(goal?'・課題あり':'')+'</small></button>';
-  });
+    return '<button class="pcard" data-act="p-open" data-pid="'+esc(p.id)+'"><span class="no">'+esc(digits(p.number)||'-')+'</span><span class="pn">'+esc(p.name)+'</span>'+
+      '<small>'+(rows.length?rows.length+'試合 打率'+f3(s.avg):'試合の記録なし')+(nn?'・🎥'+nn:'')+(goal?'・課題あり':'')+'</small></button>';};
+  const all=team.players.filter(p=>p.name).slice().sort((a,b)=>numKey(a)-numKey(b));
+  const act=all.filter(p=>!p.left),gone=all.filter(p=>p.left);
+  h+='<div class="pgrid">'+act.map(card).join('');
+  if(gone.length)h+='</div><h2 class="h">退団・卒団した選手</h2><div class="pgrid">'+gone.map(card).join('');
   h+='</div><p class="foot">成績は、自チームを設定したライブ記録と、写真から取り込んだ試合から集計しています。</p>';
   m.innerHTML=h;
 }
@@ -1230,7 +1250,7 @@ function playerDetail(pid){
   else{
     h+='<ul class="notes">';
     ns.forEach(n=>{const g=n.gid&&games[n.gid],L=g?gameLines(n.gid):null;
-      h+='<li>'+(n.img?'<img data-img="'+esc(n.img)+'" alt=""'+esc(p.name+' '+(n.kind||'')+'の静止画')+'" loading="lazy">':'')+
+      h+='<li>'+(n.img?'<img data-img="'+esc(n.img)+'" alt="'+esc(p.name+' '+(n.kind||'')+'の静止画')+'" loading="lazy">':'')+
         '<div class="nb"><small>'+esc(fmtDate(n.date)||n.date||'')+'　'+esc(n.kind||'')+(L?'　対'+esc(L.opp):'')+'</small>'+(n.memo?'<p>'+esc(n.memo)+'</p>':'')+
         (App.canWrite?'<button class="link danger" data-act="n-del" data-id="'+esc(n.id)+'" style="align-self:flex-start">この記録を削除</button>':'')+'</div></li>';});
     h+='</ul>';
@@ -1263,13 +1283,15 @@ const RO=(()=>{
     if(!tBy(EDIT))EDIT=D.teams[0]?D.teams[0].id:'';
     I('ro-sel').innerHTML=D.teams.map(t=>'<option value="'+esc(t.id)+'"'+(t.id===EDIT?' selected':'')+'>'+esc(t.name||'（呼び名なし）')+'（'+t.players.length+'人）</option>').join('')||'<option value="">チームがありません</option>';
     const t=tBy(EDIT);I('ro-tname').value=t?t.name:'';I('ro-tname').disabled=!t;
-    I('ro-tb').innerHTML=t?'<colgroup><col style="width:4.2em"><col><col style="width:32%"><col style="width:44px"></colgroup><thead><tr><th>背番号</th><th>名前（姓）</th><th>別名（下の名前など）</th><th></th></tr></thead><tbody>'+t.players.map((p,i)=>
-      '<tr><td><input class="inp" inputmode="numeric" data-ri="'+i+'" data-rf="number" value="'+esc(p.number)+'" aria-label="背番号"></td>'+
+    const used=usedPids();
+    I('ro-tb').innerHTML=t?'<caption class="hint" style="caption-side:bottom;text-align:left;padding:6px">試合やフォームの記録がある選手は、消さずに「退団」にします。記録は選手カルテに残ります。</caption><colgroup><col style="width:4.2em"><col><col style="width:32%"><col style="width:44px"></colgroup><thead><tr><th>背番号</th><th>名前（姓）</th><th>別名（下の名前など）</th><th></th></tr></thead><tbody>'+t.players.map((p,i)=>
+      '<tr'+(p.left?' style="opacity:.55"':'')+'><td><input class="inp" inputmode="numeric" data-ri="'+i+'" data-rf="number" value="'+esc(p.number)+'" aria-label="背番号"></td>'+
       '<td><input class="inp" data-ri="'+i+'" data-rf="name" value="'+esc(p.name)+'" aria-label="名前"></td>'+
       '<td><input class="inp" data-ri="'+i+'" data-rf="nick" value="'+esc(p.nick||'')+'" aria-label="別名"></td>'+
-      '<td><button class="btn sm" data-rdel="'+i+'" aria-label="この行を削除">✕</button></td></tr>').join('')+'</tbody>':'<tbody><tr><td class="hint">「＋ チーム」から作ってください</td></tr></tbody>';
+      '<td>'+(used.has(p.id)?'<button class="btn sm" data-rleft="'+i+'" aria-label="'+(p.left?'退団を取り消す':'退団にする')+'" style="font-size:11px;padding:4px 2px">'+(p.left?'戻す':'退団')+'</button>':'<button class="btn sm" data-rdel="'+i+'" aria-label="この行を削除">✕</button>')+'</td></tr>').join('')+'</tbody>':'<tbody><tr><td class="hint">「＋ チーム」から作ってください</td></tr></tbody>';
     I('ro-tb').querySelectorAll('input').forEach(el=>el.oninput=()=>{tBy(EDIT).players[+el.dataset.ri][el.dataset.rf]=el.value;touch();});
     I('ro-tb').querySelectorAll('[data-rdel]').forEach(b=>b.onclick=()=>{tBy(EDIT).players.splice(+b.dataset.rdel,1);touch();render();});
+    I('ro-tb').querySelectorAll('[data-rleft]').forEach(b=>b.onclick=()=>{const p=tBy(EDIT).players[+b.dataset.rleft];p.left=!p.left;touch();render();});
     I('ro-msg').textContent=editing?'まだ保存していない変更があります。「名簿を保存」を押してください。':'';
     BK.info();
   }
@@ -1283,12 +1305,22 @@ const RO=(()=>{
     const ins=I('ro-tb').querySelectorAll('input[data-rf="name"]');if(ins.length)ins[ins.length-1].focus();};
   I('ro-save').onclick=async()=>{
     draftNow();
+    // a player with saved records must keep a name, or their history would lose its owner
+    const used=usedPids(),noName=[];
+    D.teams.forEach(t=>t.players.forEach(p=>{if(!String(p.name||'').trim()&&used.has(p.id))noName.push(p);}));
+    if(noName.length){
+      const was=noName.map(p=>{const f=findPlayer(p.id);return f?f.p.name:'';}).filter(Boolean);
+      I('ro-msg').textContent='記録がある選手の名前は空にできません'+(was.length?'（'+was.join('、')+'）':'')+'。名前を入れ直すか、「退団」にしてください。';
+      return;
+    }
     const data={clubName:String(D.clubName||'').trim(),aliases:(D.aliases||[]).map(x=>String(x).trim()).filter(Boolean),
       opponents:(D.opponents||[]).map(x=>String(x).trim()).filter(Boolean).slice(0,60),
-      teams:D.teams.map(t=>({id:t.id,name:String(t.name||'').trim(),players:t.players.map(p=>({id:p.id||newId('p'),number:digits(p.number),name:String(p.name||'').trim(),nick:String(p.nick||'').trim()})).filter(p=>p.name).slice(0,60)})).slice(0,12),
+      teams:D.teams.map(t=>({id:t.id,name:String(t.name||'').trim(),players:t.players.map(p=>({id:p.id||newId('p'),number:digits(p.number),name:String(p.name||'').trim(),nick:String(p.nick||'').trim(),left:!!p.left})).filter(p=>p.name)})),
       updatedAt:Date.now()};
-    ROSTER=normRoster(data);ROSTER._v=Date.now();
-    await saveDoc('team/main',data);editing=false;D=null;render();I('ro-msg').textContent='名簿を保存しました。';toast('名簿を保存しました');
+    const prev=ROSTER;ROSTER=normRoster(data);ROSTER._v=Date.now();
+    try{await saveDoc('team/main',data);}
+    catch(e){ROSTER=prev;ROSTER._v=Date.now();I('ro-msg').textContent='名簿を保存できませんでした。入力はこの画面に残っているので、空き容量を確認してもう一度「名簿を保存」を押してください。';return;}
+    editing=false;D=null;render();I('ro-msg').textContent='名簿を保存しました。';toast('名簿を保存しました');
   };
   // used by the photo reader: add unknown names straight into the draft, then let a person confirm
   function addPlayers(teamId,list){
@@ -1323,27 +1355,52 @@ const BK=(()=>{
       msg.textContent='「'+name+'」を保存しました。メールやクラウドなど、この端末の外にも置いておくと安心です。';info();
     }catch(e){msg.textContent=e&&e.code==='declined'?'保存をやめました。':'バックアップを保存できませんでした。';}
   };
+  const isObj=v=>v&&typeof v==='object'&&!Array.isArray(v);
+  // write everything in one transaction: either the whole backup lands, or nothing changes
+  function commitAll(puts){
+    return new Promise((ok,ng)=>{
+      if(!IDB.db){ok();return;}
+      let tx;try{tx=IDB.db.transaction(['kv','games','notes','pmeta','images'],'readwrite');}catch(e){ng(e);return;}
+      try{puts.forEach(([st,k,v])=>tx.objectStore(st).put(v,k));}catch(e){try{tx.abort();}catch(x){}ng(e);return;}
+      tx.oncomplete=()=>ok();tx.onerror=()=>ng(tx.error);tx.onabort=()=>ng(tx.error||new Error('abort'));
+    });
+  }
   I('bk-file').onchange=async e=>{
     const f=e.target.files[0];e.target.value='';if(!f)return;const msg=I('bk-msg');
     let d;try{d=JSON.parse(await f.text());}catch(x){msg.textContent='このファイルは読み込めませんでした。';return;}
-    if(!d||d.app!=='team-baseball-note'){msg.textContent='このアプリのバックアップファイルではありません。';return;}
+    if(!d||d.app!=='team-baseball-note'||!isObj(d.games||{})||!isObj(d.notes||{})){msg.textContent='このアプリのバックアップファイルではありません。';return;}
     msg.textContent='読み込んでいます…';
     try{
-      // roster: merge teams by id, players by id
-      const inR=normRoster(d.roster)||emptyRoster(),R=clone(ROSTER);
+      // roster: new teams and new players are added; players already here keep what this device has
+      const inR=normRoster(d.roster)||emptyRoster(),R=clone(ROSTER);let np=0;
       if(!R.clubName)R.clubName=inR.clubName;
       R.aliases=[...new Set(R.aliases.concat(inR.aliases))];R.opponents=[...new Set(R.opponents.concat(inR.opponents))];
-      inR.teams.forEach(t=>{const cur=R.teams.find(x=>x.id===t.id);if(!cur){R.teams.push(t);return;}
-        if(!cur.name)cur.name=t.name;t.players.forEach(p=>{const i=cur.players.findIndex(x=>x.id===p.id);if(i<0)cur.players.push(p);else cur.players[i]=p;});});
-      ROSTER=normRoster(R);ROSTER._v=Date.now();await idbPut('kv','roster',clone(R));
-      let ng=0,nn=0;
-      for(const [id,g] of Object.entries(d.games||{})){const cur=games[id];if(!cur||(g.upd||0)>=(cur.upd||0)){games[id]=g;await idbPut('games',id,g);ng++;}}
-      for(const [id,v] of Object.entries(d.pmeta||{})){const cur=pmeta[id];if(!cur||(v.gupd||0)>=(cur.gupd||0)){pmeta[id]=v;await idbPut('pmeta',id,v);}}
+      inR.teams.forEach(t=>{const cur=R.teams.find(x=>x.id===t.id);
+        if(!cur){R.teams.push(t);np+=t.players.length;return;}
+        if(!cur.name)cur.name=t.name;
+        t.players.forEach(p=>{if(!cur.players.some(x=>x.id===p.id)){cur.players.push(p);np++;}});});
+      // games: only newer edits replace what is here, so reading the same file twice changes nothing
+      const G={},P={},N={},IMG=[];let ng=0,nn=0,miss=0;
+      for(const [id,g] of Object.entries(d.games||{})){if(!isObj(g))continue;const cur=games[id];if(!cur||(+g.upd||0)>(+cur.upd||0)){G[id]=g;ng++;}}
+      for(const [id,v] of Object.entries(d.pmeta||{})){if(!isObj(v))continue;const cur=pmeta[id];if(!cur||(+v.gupd||0)>(+cur.gupd||0))P[id]=v;}
       for(const [id,n] of Object.entries(d.notes||{})){
-        if(n.img&&d.images&&d.images[n.img]){const has=await idbGet('images',n.img).catch(()=>null);if(!has)await idbPut('images',n.img,await dataToBlob(d.images[n.img]));}
-        notes[id]=n;await idbPut('notes',id,n);nn++;}
-      msg.textContent='読み込みました（試合'+ng+'件・フォーム記録'+nn+'件）。';info();RO.render();toast('バックアップを読み込みました');
-    }catch(x){msg.textContent='途中で読み込めなくなりました。端末の空き容量を確認してください。';}
+        if(!isObj(n))continue;
+        if(notes[id]&&JSON.stringify(notes[id])===JSON.stringify(n))continue;
+        if(n.img){const has=await idbGet('images',n.img).catch(()=>null);
+          if(!has){const u=d.images&&d.images[n.img];if(u){try{IMG.push([n.img,await dataToBlob(u)]);}catch(x){miss++;}}else miss++;}}
+        N[id]=n;nn++;}
+      const puts=[['kv','roster',clone(R)]];
+      Object.entries(G).forEach(([k,v])=>puts.push(['games',k,v]));
+      Object.entries(P).forEach(([k,v])=>puts.push(['pmeta',k,v]));
+      Object.entries(N).forEach(([k,v])=>puts.push(['notes',k,v]));
+      IMG.forEach(([k,b])=>puts.push(['images',k,b]));
+      await commitAll(puts);
+      // only after the device has it all, show it
+      ROSTER=normRoster(R);ROSTER._v=Date.now();Object.assign(games,G);Object.assign(pmeta,P);Object.assign(notes,N);
+      msg.textContent=(ng+nn+np?'読み込みました（新しい選手'+np+'人・試合'+ng+'件・フォーム記録'+nn+'件）。':'このバックアップの内容は、すべてこの端末に入っていました。')+
+        (miss?'画像が見つからないフォーム記録が'+miss+'件あります（メモは読み込みました）。':'');
+      info();RO.render();toast('バックアップを読み込みました');
+    }catch(x){msg.textContent='読み込めませんでした。この端末の記録は読み込む前のままです。'+(x&&x.name==='QuotaExceededError'?'端末の空き容量が足りません。':'');}
   };
   I('bk-wipe').onclick=()=>{
     ui.conf={msg:'この端末の名簿・試合・フォーム記録をすべて消しますか？元に戻せません。先にバックアップを保存してください。',yes:'すべて消す',async fn(){
@@ -1915,10 +1972,12 @@ function buildGame(){
  return {kind:"photo",date:I("rd-date").value||today(),name:I("rd-name").value.trim().slice(0,30),teams,my,rt:T?T.id:"",
   line,R,H,E,bat,pit,hl:hl(me,pl),created:Date.now(),upd:Date.now()};
 }
-I("rd-save").onclick=()=>{
+I("rd-save").onclick=async()=>{
  const g=buildGame();if(!g)return;
  const id=SAVED||newId("p");if(SAVED&&games[id])g.created=games[id].created;
- games[id]=g;SAVED=id;saveDoc("games/"+id,g);
+ try{await saveDoc("games/"+id,g)}
+ catch(e){I("rd-msg").textContent="保存できませんでした。端末の空き容量を確認して、もう一度押してください。";return}
+ games[id]=g;SAVED=id;
  const miss=g.bat.filter(b=>!b.pid&&b.name&&!/不明/.test(b.name)).map(b=>b.name);
  I("rd-msg").textContent="保存しました。"+(miss.length?"名簿にない名前（"+miss.join("、")+"）は選手カルテに入りません。必要なら「名簿にない選手を名簿に追加」を押してください。":"");
  I("rd-save").textContent="保存し直す（日付やメモを直したとき）";toast("試合を保存しました");
@@ -2083,14 +2142,16 @@ I('fm-save').onclick=async()=>{
   if(!pid){toast('先に選手を選んでください');I('fm-pid').focus();return;}
   const o=still();if(!o){toast('先に動画を選んでください');return;}
   const blob=await new Promise(r=>o.toBlob(r,'image/jpeg',.85));if(!blob){toast('静止画を作れませんでした');return;}
+  let img='',id='';
   try{
-    const img=await putImage(blob);
-    const id=newId('n');
-    notes[id]={pid,kind:I('fm-kind').value,memo:I('fm-memo').value.trim().slice(0,300),img,gid:gid||'',date:today(),created:Date.now()};
-    await saveDoc('notes/'+id,notes[id]);
+    img=await putImage(blob);
+    id=newId('n');
+    const n={pid,kind:I('fm-kind').value,memo:I('fm-memo').value.trim().slice(0,300),img,gid:gid||'',date:today(),created:Date.now()};
+    await saveDoc('notes/'+id,n);
+    notes[id]=n;
     I('fm-memo').value='';refreshPast();
     const f=findPlayer(pid);toast((f?f.p.name+'さんの':'')+'カルテに保存しました');
-  }catch(e){toast('保存できませんでした。端末の空き容量を確認してください');}
+  }catch(e){if(img)delImage(img);toast('保存できませんでした。端末の空き容量を確認してください。メモは消えていません');}
 };
 function refreshPlayers(){
   const sel=I('fm-pid'),cur=sel.value;
