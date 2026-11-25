@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShotFind</title>
+<meta name="description" content="チームの試合写真から、わが子が写っている写真だけをAIで探す、少年野球・中学野球の親のための無料ツール。登録なし、写真も顔データも端末の外に出ません。">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ShotFind">
+<meta property="og:description" content="チームの試合写真から、わが子が写っている写真だけをAIで探す、少年野球・中学野球の親のための無料ツール。登録なし、写真も顔データも端末の外に出ません。">
+<meta property="og:url" content="https://yatti3g-byte.github.io/ShotFind/">
+<meta property="og:locale" content="ja_JP">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f6f5f0">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%9A%BE%3C/text%3E%3C/svg%3E">
+<style>
+/* VOICE: 試合後のベンチ横で親が使う、落ち着いた道具。TapScore / FormNote と同じ家族。
+   NAME: ShotFind（ショットファインド）。TapScore・FormNote と同じブランド。
+   IDEA: 写真のコンタクトシート。わが子の顔に緑の枠がつく。
+   PICTURE: 結果のグリッドそのもの。
+   COLOUR and TYPE: TapScoreと同じ温かいオフホワイト、白いカード、グラウンドの緑。システムの日本語ゴシック。
+   LAYOUT: 1カラム、手順 1→2→結果。スマホ優先。 */
+:root{
+  --paper:#f6f5f0;--surface:#fff;--ink:#1f2a22;--muted:#6b756e;--line:#d9d8d0;--accent:#2f7d4f;--accent2:#e8f3ec;--warn:#fff4d6;--miss:#9aa39c;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--paper:#141a16;--surface:#1e2721;--ink:#e8ede9;--muted:#98a49b;--line:#33423a;--accent:#58b87e;--accent2:#25382c;--warn:#3a3418;--miss:#5d6a61;color-scheme:dark}}
+:root[data-theme=dark]{--paper:#141a16;--surface:#1e2721;--ink:#e8ede9;--muted:#98a49b;--line:#33423a;--accent:#58b87e;--accent2:#25382c;--warn:#3a3418;--miss:#5d6a61;color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font:16px/1.55 "Hiragino Sans","Noto Sans JP",system-ui,sans-serif;-webkit-text-size-adjust:100%;overflow-x:clip}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+main{max-width:760px;margin:0 auto;padding:16px 16px 64px;display:flex;flex-direction:column;gap:14px}
+h1{font-size:30px;line-height:1.2;margin:8px 0 2px;letter-spacing:.02em}
+.lead{margin:0;color:var(--muted);font-size:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card h2{font-size:18px;margin:0 0 4px;display:flex;gap:8px;align-items:center}
+.num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-size:14px;flex:none}
+.hint{margin:0 0 12px;color:var(--muted);font-size:14px}
+.pick{display:flex;align-items:center;justify-content:center;min-height:52px;border:2px dashed var(--line);border-radius:10px;cursor:pointer;font-weight:700;color:var(--accent);background:var(--accent2)}
+.pick input{position:absolute;opacity:0;width:1px;height:1px}
+.refs{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.ref{position:relative;width:72px;text-align:center;font-size:12px;color:var(--muted)}
+.ref img,.ref .ph{width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);display:block;background:var(--paper)}
+.ref.bad img{border-color:var(--miss);filter:grayscale(1)}
+.ref button{position:absolute;top:-4px;right:-4px;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--surface);cursor:pointer;line-height:1}
+.btn{min-height:48px;padding:0 18px;border-radius:10px;border:0;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.sub{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+label.chk{display:flex;gap:8px;align-items:center;font-size:14px;min-height:44px;cursor:pointer}
+label.chk input{width:20px;height:20px;accent-color:var(--accent)}
+.status{font-size:14px;color:var(--muted);min-height:1.5em;margin:10px 0 0}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:8px;display:none}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.banner{border-left:4px solid #e0b000;background:var(--warn);padding:10px 12px;border-radius:8px;font-size:14px;margin:0}
+.sum{font-size:22px;font-weight:800;margin:0}
+.sum small{font-size:14px;font-weight:400;color:var(--muted)}
+.slider{display:grid;grid-template-columns:auto minmax(0,1fr) 3.5em;gap:10px;align-items:center;font-size:14px;margin:10px 0}
+.slider input{width:100%;accent-color:var(--accent);height:32px}
+.slider output{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
+.ph-card{position:relative;border-radius:8px;overflow:hidden;background:var(--paper);border:3px solid transparent;cursor:pointer}
+.ph-card.hit{border-color:var(--accent)}
+.ph-card.off{opacity:.55}
+.ph-card img{display:block;width:100%;height:auto}
+.box{position:absolute;border:2px solid #fff;box-shadow:0 0 0 2px var(--accent);border-radius:4px;pointer-events:none}
+.badge{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.68);color:#fff;font-size:12px;padding:2px 7px;border-radius:10px;font-variant-numeric:tabular-nums}
+.tick{position:absolute;right:6px;top:6px;width:28px;height:28px;border-radius:50%;background:var(--surface);border:2px solid var(--line);display:grid;place-items:center;font-weight:900;color:transparent}
+.ph-card.sel .tick{background:var(--accent);border-color:#fff;color:#fff}
+.empty{color:var(--muted);font-size:14px;text-align:center;padding:24px 0}
+footer{color:var(--muted);font-size:13px}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+@media (max-width:420px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}h1{font-size:26px}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>ShotFind</h1>
+    <p class="lead">チームの試合写真から、わが子が写っている写真だけをAIで探します。登録なし。写真も顔データも、この端末の外には出ません。</p>
+  </header>
+
+  <p class="banner">試作版です。帽子やヘルメットで顔が隠れた写真、遠くて顔が小さい写真は見落とすことがあります。</p>
+
+  <section class="card" aria-labelledby="h-ref">
+    <h2 id="h-ref"><span class="num">1</span>わが子の顔写真</h2>
+    <p class="hint">正面の顔写真を3〜10枚選んでください。帽子あり・なし、角度違いがあると見つけやすくなります。写真に何人か写っている場合は、いちばん大きい顔を使います。</p>
+    <label class="pick">顔写真を選ぶ<input id="refInput" type="file" accept="image/*" multiple></label>
+    <div class="refs" id="refs"></div>
+  </section>
+
+  <section class="card" aria-labelledby="h-pool">
+    <h2 id="h-pool"><span class="num">2</span>チームの試合写真</h2>
+    <p class="hint">LINEアルバムから保存した写真などをまとめて選んでください。</p>
+    <label class="pick">試合写真を選ぶ<input id="poolInput" type="file" accept="image/*" multiple></label>
+    <p class="status" id="poolCount">まだ選んでいません</p>
+    <div class="row">
+      <label class="chk"><input type="checkbox" id="fine" checked>小さく写った顔も探す（時間は約5倍）</label>
+    </div>
+    <div class="row"><button class="btn" id="run" disabled>うちの子をさがす</button></div>
+    <div class="bar" id="bar"><i></i></div>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+  </section>
+
+  <section class="card" id="result" hidden aria-labelledby="h-res">
+    <h2 id="h-res">結果</h2>
+    <p class="sum" id="sum"></p>
+    <div class="slider">
+      <label for="thr">似ている度</label>
+      <input type="range" id="thr" min="30" max="85" value="55">
+      <output id="thrOut">55%</output>
+    </div>
+    <p class="hint">この数字より似ている写真を「うちの子」にします。上げると間違いが減り、下げると見落としが減ります。写真をタップすると選ぶ・外すを切り替えられます。</p>
+    <div class="row">
+      <label class="chk"><input type="checkbox" id="onlyHit" checked>うちの子の写真だけ表示</label>
+    </div>
+    <div class="row">
+      <button class="btn" id="share">選んだ写真を送る（LINEなど）</button>
+      <button class="btn sub" id="save">端末に保存</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <footer>
+    <p>顔の照合には、ブラウザの中で動くオープンソースのAI（Human ライブラリ）を使っています。最初の1回だけ、AIのモデル（数MB）を読み込みます。</p>
+  </footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/human@3.3.6/dist/human.js"></script>
+<script>
+{
+const $ = id => document.getElementById(id);
+const MODELS = 'https://cdn.jsdelivr.net/npm/@vladmandic/human@3.3.6/models/';
+const config = {
+  modelBasePath: MODELS, backend: 'webgl', cacheSensitivity: 0, debug: false,
+  filter: { enabled: false },
+  face: {
+    enabled: true,
+    detector: { rotation: true, maxDetected: 30, minConfidence: 0.3, return: false },
+    mesh: { enabled: true }, iris: { enabled: false }, description: { enabled: true },
+    emotion: { enabled: false }, antispoof: { enabled: false }, liveness: { enabled: false }, attention: { enabled: false }
+  },
+  body: { enabled: false }, hand: { enabled: false }, object: { enabled: false },
+  gesture: { enabled: false }, segmentation: { enabled: false }
+};
+
+let human = null;
+let refs = [];   // {file, emb, thumb, ok}
+let pool = [];   // File[]
+let photos = []; // {file, url, best, box, sel}
+let busy = false;
+
+const status = t => { $('status').textContent = t; };
+const progress = (n, total) => {
+  $('bar').style.display = total ? 'block' : 'none';
+  $('bar').firstElementChild.style.width = total ? (100 * n / total) + '%' : '0';
+};
+const yieldUI = () => new Promise(r => setTimeout(r, 0));
+
+async function getHuman() {
+  if (human) return human;
+  const NS = window.Human;
+  if (!NS) throw new Error('AIライブラリを読み込めませんでした。通信状態を確認してください。');
+  const Ctor = NS.Human || NS.default || NS;
+  human = new Ctor(config);
+  status('AIのモデルを読み込んでいます（初回のみ）…');
+  await human.load();
+  return human;
+}
+
+async function loadCanvas(file, max) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    const s = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.naturalWidth * s);
+    c.height = Math.round(img.naturalHeight * s);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return c;
+  } finally { URL.revokeObjectURL(url); }
+}
+
+async function detectFaces(canvas, ox = 0, oy = 0) {
+  const r = await human.detect(canvas);
+  return (r.face || []).filter(f => f.embedding && f.embedding.length)
+    .map(f => ({ emb: f.embedding, box: [f.box[0] + ox, f.box[1] + oy, f.box[2], f.box[3]] }));
+}
+
+// 小さい顔用：2×2に重ねて切り分け、それぞれ拡大して探す
+async function detectTiled(canvas) {
+  let all = await detectFaces(canvas);
+  const W = canvas.width, H = canvas.height, tw = Math.round(W * 0.6), th = Math.round(H * 0.6);
+  for (const [x, y] of [[0, 0], [W - tw, 0], [0, H - th], [W - tw, H - th]]) {
+    const t = document.createElement('canvas');
+    t.width = tw; t.height = th;
+    t.getContext('2d').drawImage(canvas, x, y, tw, th, 0, 0, tw, th);
+    all = all.concat(await detectFaces(t, x, y));
+    await yieldUI();
+  }
+  return all;
+}
+
+function faceThumb(canvas, box) {
+  const [x, y, w, h] = box, pad = w * 0.25;
+  const t = document.createElement('canvas');
+  t.width = t.height = 144;
+  t.getContext('2d').drawImage(canvas, x - pad, y - pad, w + pad * 2, h + pad * 2, 0, 0, 144, 144);
+  return t.toDataURL('image/jpeg', 0.85);
+}
+
+function renderRefs() {
+  const box = $('refs');
+  box.replaceChildren();
+  refs.forEach((r, i) => {
+    const d = document.createElement('div');
+    d.className = 'ref' + (r.ok ? '' : ' bad');
+    const img = document.createElement('img');
+    img.alt = r.ok ? '登録した顔' : '顔が見つからない写真';
+    img.src = r.thumb;
+    const cap = document.createElement('div');
+    cap.textContent = r.ok ? '登録済み' : '顔なし';
+    const x = document.createElement('button');
+    x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', 'この顔写真を外す');
+    x.addEventListener('click', () => { refs.splice(i, 1); renderRefs(); updateRun(); });
+    d.append(img, cap, x);
+    box.append(d);
+  });
+}
+
+function updateRun() {
+  const n = refs.filter(r => r.ok).length;
+  $('run').disabled = busy || !n || !pool.length;
+  $('poolCount').textContent = pool.length ? pool.length + '枚を選びました' : 'まだ選んでいません';
+}
+
+$('refInput').addEventListener('change', async e => {
+  const files = [...e.target.files];
+  e.target.value = '';
+  if (!files.length || busy) return;
+  busy = true; updateRun();
+  try {
+    await getHuman();
+    for (let i = 0; i < files.length; i++) {
+      status(`顔写真を確認中… ${i + 1}/${files.length}`);
+      const c = await loadCanvas(files[i], 1280);
+      const faces = await detectFaces(c);
+      if (faces.length) {
+        const f = faces.reduce((a, b) => (b.box[2] * b.box[3] > a.box[2] * a.box[3] ? b : a));
+        refs.push({ file: files[i], emb: f.emb, thumb: faceThumb(c, f.box), ok: true });
+      } else {
+        refs.push({ file: files[i], emb: null, thumb: c.toDataURL('image/jpeg', 0.6), ok: false });
+      }
+      renderRefs();
+      await yieldUI();
+    }
+    const bad = refs.filter(r => !r.ok).length;
+    status(bad ? `顔が見つからない写真が${bad}枚ありました。×で外してください。` : '顔写真を登録しました。');
+  } catch (err) { status('エラー：' + err.message); }
+  busy = false; updateRun();
+});
+
+$('poolInput').addEventListener('change', e => {
+  pool = [...e.target.files];
+  e.target.value = '';
+  updateRun();
+});
+
+$('run').addEventListener('click', async () => {
+  if (busy) return;
+  busy = true; updateRun();
+  photos.forEach(p => URL.revokeObjectURL(p.url));
+  photos = [];
+  const fine = $('fine').checked;
+  const refEmb = refs.filter(r => r.ok).map(r => r.emb);
+  const t0 = performance.now();
+  try {
+    await getHuman();
+    for (let i = 0; i < pool.length; i++) {
+      status(`さがしています… ${i + 1}/${pool.length}枚`);
+      progress(i, pool.length);
+      let best = 0, box = null;
+      try {
+        const c = await loadCanvas(pool[i], fine ? 2000 : 1280);
+        const faces = fine ? await detectTiled(c) : await detectFaces(c);
+        for (const f of faces) {
+          for (const r of refEmb) {
+            const s = human.match.similarity(r, f.emb);
+            if (s > best) { best = s; box = [f.box[0] / c.width, f.box[1] / c.height, f.box[2] / c.width, f.box[3] / c.height]; }
+          }
+        }
+      } catch (err) { /* 読めない写真（HEICなど）は0点で残す */ }
+      photos.push({ file: pool[i], url: URL.createObjectURL(pool[i]), best, box, sel: null });
+      await yieldUI();
+    }
+    progress(0, 0);
+    const sec = Math.round((performance.now() - t0) / 1000);
+    status(`${pool.length}枚を${sec}秒で調べました。`);
+    photos.sort((a, b) => b.best - a.best);
+    $('result').hidden = false;
+    render();
+    $('result').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  } catch (err) { progress(0, 0); status('エラー：' + err.message); }
+  busy = false; updateRun();
+});
+
+const thr = () => Number($('thr').value) / 100;
+const isSel = p => (p.sel === null ? p.best >= thr() : p.sel);
+
+function render() {
+  const t = thr(), only = $('onlyHit').checked;
+  $('thrOut').textContent = Math.round(t * 100) + '%';
+  const hits = photos.filter(p => p.best >= t).length;
+  const sel = photos.filter(isSel).length;
+  $('sum').innerHTML = '';
+  $('sum').append(document.createTextNode(`${photos.length}枚中 ${hits}枚`));
+  const sm = document.createElement('small');
+  sm.textContent = `　（選択中 ${sel}枚）`;
+  $('sum').append(sm);
+  const grid = $('grid');
+  grid.replaceChildren();
+  const list = photos.filter(p => !only || p.best >= t || p.sel === true);
+  if (!list.length) {
+    const e = document.createElement('p');
+    e.className = 'empty';
+    e.textContent = 'この似ている度では見つかりませんでした。数字を下げてみてください。';
+    grid.append(e);
+  }
+  for (const p of list) {
+    const d = document.createElement('div');
+    d.className = 'ph-card' + (p.best >= t ? ' hit' : '') + (isSel(p) ? ' sel' : ' off');
+    d.tabIndex = 0;
+    d.setAttribute('role', 'checkbox');
+    d.setAttribute('aria-checked', String(isSel(p)));
+    const img = document.createElement('img');
+    img.src = p.url; img.alt = p.file.name; img.loading = 'lazy';
+    d.append(img);
+    if (p.box && p.best >= t) {
+      const b = document.createElement('div');
+      b.className = 'box';
+      Object.assign(b.style, { left: p.box[0] * 100 + '%', top: p.box[1] * 100 + '%', width: p.box[2] * 100 + '%', height: p.box[3] * 100 + '%' });
+      d.append(b);
+    }
+    const badge = document.createElement('span');
+    badge.className = 'badge';
+    badge.textContent = p.best ? Math.round(p.best * 100) + '%' : '顔なし';
+    const tick = document.createElement('span');
+    tick.className = 'tick'; tick.textContent = '✓';
+    d.append(badge, tick);
+    const toggle = () => { p.sel = !isSel(p); render(); };
+    d.addEventListener('click', toggle);
+    d.addEventListener('keydown', ev => { if (ev.key === ' ' || ev.key === 'Enter') { ev.preventDefault(); toggle(); } });
+    grid.append(d);
+  }
+}
+
+$('thr').addEventListener('input', () => { photos.forEach(p => { p.sel = null; }); render(); });
+$('onlyHit').addEventListener('change', render);
+
+function saveFiles(files) {
+  files.forEach((f, i) => setTimeout(() => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(f);
+    a.download = f.name || `photo-${i + 1}.jpg`;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }, i * 300));
+}
+
+$('share').addEventListener('click', async () => {
+  const files = photos.filter(isSel).map(p => p.file);
+  if (!files.length) { status('送る写真が選ばれていません。'); return; }
+  try {
+    if (navigator.canShare && navigator.canShare({ files })) {
+      await navigator.share({ files });
+      return;
+    }
+    status('この端末では直接送れないため、保存します。保存した写真をLINEから送ってください。');
+    saveFiles(files);
+  } catch (err) {
+    if (err.name !== 'AbortError') status('送れませんでした：' + err.message);
+  }
+});
+
+$('save').addEventListener('click', () => {
+  const files = photos.filter(isSel).map(p => p.file);
+  if (!files.length) { status('保存する写真が選ばれていません。'); return; }
+  saveFiles(files);
+});
+
+if (!window.Human) status('AIライブラリを読み込めませんでした。通信状態を確認して、ページを再読み込みしてください。');
+}
+</script>
+</body>
+</html>
