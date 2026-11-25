@@ -59,6 +59,7 @@ label.chk{display:flex;gap:8px;align-items:center;font-size:14px;min-height:44px
 label.chk input{width:20px;height:20px;accent-color:var(--accent)}
 .how{background:var(--paper);border-radius:8px;padding:10px 12px}
 .how summary{cursor:pointer;font-weight:700;color:var(--ink);min-height:28px}
+.quick{margin:0 0 10px;padding-left:1.3em}.quick li{margin:2px 0}
 .how ol,.how ul{margin:8px 0 0;padding-left:1.4em}
 .drop{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;border-radius:12px;padding:4px;transition:background .15s}
 .drop.over{background:var(--accent2);outline:2px dashed var(--accent)}
@@ -145,16 +146,16 @@ footer a{color:var(--accent)}
 
   <section class="card" aria-labelledby="h-ref">
     <h2 id="h-ref"><span class="num">1</span>わが子の顔写真</h2>
-    <p class="hint">照合に使う、わが子の正面の顔写真を3〜10枚選んでください。帽子あり・なし、角度違いがあると見つけやすくなります。写真に何人か写っている場合は、いちばん大きい顔を使います。</p>
+    <p class="hint">照合に使う、わが子の正面の顔写真を3〜10枚選んでください。帽子あり・なし、角度違いがあると見つけやすくなります。写真に何人か写っている場合は、いちばん大きい顔を使います。きょうだいの顔は混ぜずに、1人ずつ探してください。</p>
     <label class="pick" id="refPick">顔写真を選ぶ<input id="refInput" type="file" accept="image/*" multiple></label>
     <div class="refs" id="refs"></div>
     <label class="chk"><input type="checkbox" id="keepRefs">この端末に顔の特徴を保存して、次回も使う</label>
-    <p class="hint small-note">保存するのは照合用の数値と小さな顔の画像だけで、この端末のブラウザの中にだけ残ります。外部には送りません。<button class="linkbtn" id="forgetRefs" type="button" hidden>保存した顔を消す</button></p>
+    <p class="hint small-note">保存するのは照合用の数値と小さな顔の画像だけで、この端末のブラウザの中にだけ残ります。外部には送りません。初期設定はオフです。ブラウザの閲覧データを消したときも削除されます。<button class="linkbtn" id="forgetRefs" type="button" hidden>保存した顔を消す</button></p>
   </section>
 
   <section class="card" aria-labelledby="h-pool">
     <h2 id="h-pool"><span class="num">2</span>チームの試合写真</h2>
-    <p class="hint">LINEアルバムの写真は、このページから直接は開けません。先にスマホへ保存してから選んでください。</p>
+    <ul class="hint quick"><li>LINEアルバムの写真を、先にスマホに保存する</li><li>保存した写真を、下のボタンでまとめて選ぶ</li><li>一度に全部選ばなくても、あとから追加できる</li></ul>
     <details class="hint how">
       <summary>LINEアルバムの写真をスマホに保存する方法</summary>
       <ol>
@@ -182,7 +183,7 @@ footer a{color:var(--accent)}
       <button class="btn sub" id="clearPool" type="button" hidden>選んだ写真をクリア</button>
     </div>
     <div class="row">
-      <label class="chk"><input type="checkbox" id="fine">小さく写った顔も探す（時間は約5倍。見落としが多いときだけ）</label>
+      <label class="chk"><input type="checkbox" id="fine">小さく写った顔も探す（通常より時間がかかります。目安は約5倍）</label>
     </div>
     <div class="row">
       <button class="btn" id="run" disabled>うちの子をさがす</button>
@@ -211,7 +212,7 @@ footer a{color:var(--accent)}
       <button class="btn" id="share">選んだ写真を送る（LINEなど）</button>
       <button class="btn sub" id="save">端末に保存</button>
     </div>
-    <p class="hint">写真をタップすると大きく表示します。右上の丸で、選ぶ・外すを切り替えます。</p>
+    <p class="hint">写真をタップすると大きく表示します。写真右上の丸をタップすると、選択・解除できます。</p>
     <div class="grid" id="grid"></div>
   </section>
 
@@ -787,7 +788,7 @@ const STEPS = [
   { el: 'grid', sample: true, t: '④ 結果を見る', x: '見つかった写真は一致度の高い順に並び、わが子の顔に緑の枠がつきます。左下の数字が「一致度」です（ここに出ているのはサンプルの絵です）。' },
   { el: 'thrBox', sample: true, t: '⑤ 一致度で調整', x: '数字が高いほど、選んだ顔写真に似ています（正解の確率ではありません）。ほかの子が混ざるときは上げ、見落としが多いときは下げます。写真を調べ直さないので、すぐに切り替わります。' },
   { el: 'tabs', sample: true, t: '⑥ 見落としを確かめる', x: '「確認をおすすめ」には一致度がしきい値に近い写真、「顔を検出できなかった写真」には後ろ姿や帽子で顔が隠れた写真が入ります。結果にないから写っていない、とは限りません。' },
-  { el: 'grid', sample: true, first: true, t: '⑦ 確かめて選ぶ', x: '写真をタップすると大きく表示し、左右にスワイプして次の写真へ進めます。右上の丸で選ぶ・外すを切り替えます。✓ がついた写真が送る写真です。' },
+  { el: 'grid', sample: true, first: true, t: '⑦ 確かめて選ぶ', x: '写真をタップすると大きく表示し、左右にスワイプして次の写真へ進めます。写真右上の丸をタップすると、選択・解除できます。✓ がついた写真が送る写真です。' },
   { el: 'share', sample: true, t: '⑧ LINEで送る', x: 'このボタンを押すと共有メニューが開きます。LINEを選べば、選んだ写真をそのまま家族や祖父母に送れます。' },
   { t: '準備完了です', x: 'さっそく、わが子の顔写真から登録してみましょう。困ったときは「使い方・Q&A」も見てください。' }
 ];
