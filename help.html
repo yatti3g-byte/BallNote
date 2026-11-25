@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ShotFind の使い方</title>
+<meta name="description" content="チームの試合写真から、わが子が写っている写真だけをAIで探す無料ツール ShotFind の使い方。登録なし、写真も顔データも端末の外に出ません。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ShotFind の使い方">
+<meta property="og:description" content="LINEアルバムの数百枚から、わが子の写真だけ。登録なし・無料・写真は端末の外に出ません。">
+<meta property="og:url" content="https://yatti3g-byte.github.io/ShotFind/help.html">
+<meta property="og:image" content="https://yatti3g-byte.github.io/ShotFind/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%9A%BE%3C/text%3E%3C/svg%3E">
+<style>
+/* VOICE: 試合後の親に向けた、短くて親切な説明書。TapScore / FormNote と同じブランド。
+   IDEA: 写真のコンタクトシート。たくさんの中の1人に緑の枠。
+   PICTURE: 9枚のシートで、わが子の写真だけに枠がつく図。
+   COLOUR and TYPE: オフホワイト、白いカード、グラウンドの緑。日本語ゴシック。
+   LAYOUT: 1カラム。見出し→図→3ステップ→コツ→約束→よくある質問。 */
+:root{--paper:#f6f5f0;--surface:#fff;--ink:#1f2a22;--muted:#6b756e;--line:#d9d8d0;--accent:#2f7d4f;--accent2:#e8f3ec;--sky:#dfe9e2;--warn:#fff4d6;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--paper:#141a16;--surface:#1e2721;--ink:#e8ede9;--muted:#98a49b;--line:#33423a;--accent:#58b87e;--accent2:#25382c;--sky:#26332b;--warn:#3a3418;color-scheme:dark}}
+:root[data-theme=dark]{--paper:#141a16;--surface:#1e2721;--ink:#e8ede9;--muted:#98a49b;--line:#33423a;--accent:#58b87e;--accent2:#25382c;--sky:#26332b;--warn:#3a3418;color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font:16px/1.7 "Hiragino Sans","Noto Sans JP",system-ui,sans-serif;-webkit-text-size-adjust:100%;overflow-x:clip}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+main{max-width:720px;margin:0 auto;padding:20px 16px 64px;display:flex;flex-direction:column;gap:16px}
+h1{font-size:clamp(30px,7vw,42px);line-height:1.15;margin:6px 0 6px;letter-spacing:.02em;text-wrap:balance}
+h2{font-size:21px;line-height:1.3;margin:0 0 8px}
+h3{font-size:17px;margin:14px 0 4px}
+p{margin:0 0 10px}
+.lead{color:var(--muted);font-size:17px;margin:0}
+.brand{color:var(--muted);font-size:14px;margin:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px}
+.cta{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 24px;border-radius:12px;background:var(--accent);color:#fff;font-weight:800;text-decoration:none;font-size:17px}
+.sheet{width:100%;height:auto;display:block;border-radius:12px}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.steps li{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:start}
+.n{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;font-weight:800}
+.steps b{display:block;font-size:17px;margin-top:4px}
+.steps p{margin:2px 0 0;color:var(--ink)}
+.tips{margin:0;padding-left:1.3em}
+.tips li{margin:6px 0}
+.promise{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:6px}
+.promise div{background:var(--accent2);border-radius:10px;padding:12px}
+.promise b{display:block;color:var(--accent);font-size:16px}
+.promise span{font-size:14px}
+.note{background:var(--warn);border-left:4px solid #e0b000;border-radius:8px;padding:12px 14px;font-size:15px}
+details{border-top:1px solid var(--line);padding:10px 0}
+details:last-child{border-bottom:1px solid var(--line)}
+summary{cursor:pointer;font-weight:700;min-height:32px}
+details p{margin:6px 0 0}
+.family{display:flex;flex-wrap:wrap;gap:10px}
+.family a{flex:1 1 200px;display:block;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;color:var(--ink);text-decoration:none}
+.family a b{color:var(--accent)}
+.family a span{display:block;font-size:14px;color:var(--muted)}
+footer{color:var(--muted);font-size:13px;text-align:center}
+[hidden]{display:none!important}
+.bmc{display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:0 22px;border-radius:12px;background:#ffdd00;color:#1f1f1f;font-weight:800;text-decoration:none}
+@media (prefers-reduced-motion:no-preference){.hit{animation:pop 1.6s ease-out .4s both}@keyframes pop{0%{opacity:0;transform:scale(1.15)}60%{opacity:1}100%{transform:scale(1)}}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="brand">TapScore・FormNote の仲間</p>
+    <h1>ShotFind の使い方</h1>
+    <p class="lead">LINEアルバムの何百枚から、わが子が写っている写真だけ。顔をAIで照合して、見つけた写真をそのままLINEで送れます。</p>
+  </header>
+
+  <svg class="sheet" viewBox="0 0 680 330" role="img" aria-label="たくさんの試合写真の中から、わが子が写っている写真だけに緑の枠がつく様子">
+    <defs>
+      <g id="kid"><circle cx="0" cy="-14" r="13" fill="#f1d3b3"/><path d="M-15 -18 a15 13 0 0 1 30 0 v3 h-30z" fill="#1f4f8a"/><rect x="-19" y="-17" width="20" height="4" rx="2" fill="#1f4f8a"/><path d="M-17 22 q0 -22 17 -22 q17 0 17 22z" fill="#fff" stroke="#c9cfc8"/></g>
+      <g id="kidme"><circle cx="0" cy="-14" r="13" fill="#e9c39e"/><path d="M-15 -18 a15 13 0 0 1 30 0 v3 h-30z" fill="#1f4f8a"/><rect x="-1" y="-17" width="20" height="4" rx="2" fill="#1f4f8a"/><path d="M-17 22 q0 -22 17 -22 q17 0 17 22z" fill="#fff" stroke="#c9cfc8"/></g>
+      <g id="field"><rect width="200" height="92" rx="8" style="fill:var(--sky)"/><path d="M0 66 q100 -18 200 0 v26 h-200z" fill="#6aaa7b"/><path d="M60 92 q40 -22 80 0z" fill="#cfae7e"/></g>
+    </defs>
+    <rect width="680" height="330" rx="14" style="fill:var(--surface);stroke:var(--line)"/>
+    <g transform="translate(24,24)">
+      <use href="#field"/><use href="#kid" x="60" y="56"/><use href="#kid" x="140" y="60"/>
+      <use href="#field" x="218"/><use href="#kid" x="270" y="58"/><use href="#kid" x="320" y="62"/><use href="#kid" x="370" y="56"/>
+      <use href="#field" x="436"/><use href="#kidme" x="536" y="54"/>
+      <use href="#field" y="100"/><use href="#kid" x="100" y="158"/>
+      <use href="#field" x="218" y="100"/><use href="#kid" x="250" y="160"/><use href="#kidme" x="300" y="156"/><use href="#kid" x="350" y="160"/><use href="#kid" x="395" y="158"/>
+      <use href="#field" x="436" y="100"/><use href="#kid" x="500" y="158"/><use href="#kid" x="570" y="160"/>
+      <use href="#field" y="200"/><use href="#kidme" x="110" y="254"/>
+      <use href="#field" x="218" y="200"/><use href="#kid" x="290" y="258"/><use href="#kid" x="350" y="256"/>
+      <use href="#field" x="436" y="200"/><use href="#kid" x="530" y="258"/>
+      <g style="fill:none;stroke:var(--accent)" stroke-width="5">
+        <rect class="hit" x="436" y="0" width="200" height="92" rx="8"/>
+        <rect class="hit" x="218" y="100" width="200" height="92" rx="8"/>
+        <rect class="hit" x="0" y="200" width="200" height="92" rx="8"/>
+      </g>
+      <g fill="none" stroke="#fff" stroke-width="2.5"><rect x="519" y="19" width="34" height="34" rx="4"/><rect x="283" y="121" width="34" height="34" rx="4"/><rect x="93" y="219" width="34" height="34" rx="4"/></g>
+    </g>
+  </svg>
+
+  <p><a class="cta" href="./">ShotFind を開く</a></p>
+  <p style="color:var(--muted);font-size:15px">はじめての方は、ShotFind を開いて「チュートリアル（1分）」を押すと、サンプルの絵で流れを体験できます。</p>
+
+  <section class="card" aria-labelledby="h-steps">
+    <h2 id="h-steps">3ステップで使えます</h2>
+    <ol class="steps">
+      <li><span class="n">1</span><div><b>わが子の顔写真を登録</b><p>正面の顔写真を3〜10枚選びます。帽子あり・なし、角度違いがあると見つけやすくなります。顔が見つからなかった写真は灰色になるので、×で外してください。</p></div></li>
+      <li><span class="n">2</span><div><b>チームの試合写真を選ぶ</b><p>LINEアルバムの写真は、ShotFindから直接は開けません。先にLINEでアルバムを開き、右上のメニュー（︙）からダウンロードしてスマホに保存します。保存しても、ほかのメンバーには通知されません。そのあと「試合写真を選ぶ」で、保存した写真をまとめて選びます。</p></div></li>
+      <li><span class="n">3</span><div><b>「うちの子をさがす」を押して、送る</b><p>見つかった写真から順に、わが子の顔に緑の枠がついて並びます。写真をタップすると選ぶ・外すを切り替えられます。「選んだ写真を送る」を押すと共有メニューが開くので、LINEを選んで家族や祖父母に送れます。</p></div></li>
+    </ol>
+  </section>
+
+  <section class="card" aria-labelledby="h-tips">
+    <h2 id="h-tips">うまく使うコツ</h2>
+    <h3>たくさんの写真をすばやく選ぶ</h3>
+    <ul class="tips">
+      <li><b>iPhone：</b>写真を選ぶ画面で、1枚目に指を置いたまま横へ、そのまま下へなぞると、なぞった範囲がまとめて選ばれます。</li>
+      <li><b>Android・パソコン：</b>「フォルダごと選ぶ」で、保存したアルバムのフォルダを選ぶと中の写真を全部読み込みます。</li>
+      <li><b>パソコン：</b>フォルダや写真を、枠の中へドラッグしても読み込めます。</li>
+      <li>何回かに分けて選ぶと、写真は追加されていきます。</li>
+    </ul>
+    <h3>「似ている度」で調整する</h3>
+    <p>この数字より似ている写真を「うちの子」にします。ほかの子が混ざるときは上げ、見落としが多いときは下げてください。数字を変えても写真を調べ直さないので、すぐ切り替わります。</p>
+    <h3>小さく写った顔を探す</h3>
+    <p>外野の守備や集合写真など、顔が小さい写真を見落とすときだけオンにしてください。写真を細かく分けて探すので、時間は約5倍かかります。</p>
+    <h3>途中で止めても大丈夫</h3>
+    <p>「ここで止める」で止めても、調べた分は覚えています。もう一度「さがす」を押すと、調べ終わった写真は飛ばして続きから進みます。顔写真を追加したときも、写真は調べ直しません。</p>
+  </section>
+
+  <section class="card" aria-labelledby="h-promise">
+    <h2 id="h-promise">ShotFind の約束</h2>
+    <div class="promise">
+      <div><b>写真は外に出ない</b><span>顔の照合はスマホやパソコンのブラウザの中だけで行います。写真も顔データも、どこにも送りません。</span></div>
+      <div><b>登録なし</b><span>アカウントもメールアドレスもいりません。開いてすぐ使えます。</span></div>
+      <div><b>無料</b><span>広告もありません。</span></div>
+    </div>
+    <p style="margin-top:12px;font-size:14px;color:var(--muted)">最初に開いたときだけ、顔を照合するAIのモデル（数MB）を読み込みます。照合にはオープンソースの Human ライブラリを使っています。</p>
+  </section>
+
+  <p class="note">チームの写真には、ほかのお子さんも写っています。共有するときは、チームのルールに合わせてください。SNSへの投稿は、写っているお子さんの保護者の了解があるときだけにしましょう。</p>
+
+  <section class="card" aria-labelledby="h-faq">
+    <h2 id="h-faq">よくある質問</h2>
+    <details><summary>アプリのインストールは必要ですか？</summary><p>いりません。ブラウザで開くだけで使えます。よく使う場合は、ブラウザのメニューから「ホーム画面に追加」しておくと、アプリのように開けます。</p></details>
+    <details><summary>どんな写真だと見落としやすいですか？</summary><p>帽子やヘルメットで顔が隠れた写真、横顔や後ろ姿、遠くて顔が小さい写真です。顔写真を帽子をかぶった状態でも何枚か登録すると改善します。背番号での照合は今後追加する予定です。</p></details>
+    <details><summary>きょうだいを両方さがせますか？</summary><p>今は1人ずつです。もう1人をさがすときは、顔写真をクリアして登録し直してください。調べた写真は覚えているので、2人目は速く終わります。</p></details>
+    <details><summary>時間がかかります</summary><p>写真1枚ずつ、写っている全員の顔を照合しているためです。「小さく写った顔も探す」はオフにして、見つかった写真から先に選んでください。新しめのスマホやパソコンのほうが速く終わります。</p></details>
+    <details><summary>写真が読み込めません</summary><p>iPhoneの写真形式（HEIC）は、Safari以外のブラウザだと読めないことがあります。iPhoneではSafariで開いてください。AIのモデルが読み込めないときは、通信の状態を確認してページを再読み込みしてください。</p></details>
+    <details><summary>送った写真の画質は落ちますか？</summary><p>一覧には小さく縮めた画像を出していますが、送るときと保存するときは元の写真をそのまま使います。</p></details>
+  </section>
+
+  <section class="card" id="support" aria-labelledby="h-sup">
+    <h2 id="h-sup">ShotFind を応援する</h2>
+    <p>ShotFind は無料・広告なしで、少年野球の親が個人で作っています。役に立ったら、コーヒー1杯分の応援をいただけると続ける力になります。</p>
+    <a class="bmc" id="bmcLink" href="#" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 8h13v5a6 6 0 0 1-6 6H10a6 6 0 0 1-6-6zM17 9h1.5a2.5 2.5 0 0 1 0 5H17" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 3c0 1.5 1 1.5 1 3M12 3c0 1.5 1 1.5 1 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Buy Me a Coffee で応援する
+    </a>
+  </section>
+
+  <section aria-labelledby="h-family">
+    <h2 id="h-family">同じシリーズのツール</h2>
+    <div class="family">
+      <a href="https://yatti3g-byte.github.io/TapScore/"><b>TapScore</b><span>1球ずつタップで記録する少年野球のスコアブック</span></a>
+      <a href="https://yatti3g-byte.github.io/form-note/"><b>FormNote</b><span>コマ送りと角度の測定でフォームを確認</span></a>
+    </div>
+  </section>
+
+  <footer><p>ShotFind ・ 試作版</p></footer>
+</main>
+<script>
+{
+  // ↓ Buy Me a Coffee のユーザー名を入れてください（空のままだと応援欄は表示されません）
+  const BMC_USER = '';
+  const a = document.getElementById('bmcLink');
+  if (BMC_USER) a.href = 'https://www.buymeacoffee.com/' + encodeURIComponent(BMC_USER);
+  else document.getElementById('support').hidden = true;
+}
+</script>
+</body>
+</html>

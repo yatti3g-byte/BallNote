@@ -9,7 +9,11 @@
 <meta property="og:title" content="ShotFind">
 <meta property="og:description" content="チームの試合写真から、わが子が写っている写真だけをAIで探す、少年野球・中学野球の親のための無料ツール。登録なし、写真も顔データも端末の外に出ません。">
 <meta property="og:url" content="https://yatti3g-byte.github.io/ShotFind/">
+<meta property="og:image" content="https://yatti3g-byte.github.io/ShotFind/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#f6f5f0">
@@ -79,6 +83,21 @@ label.chk input{width:20px;height:20px;accent-color:var(--accent)}
 .ph-card.sel .tick{background:var(--accent);border-color:#fff;color:#fff}
 .empty{color:var(--muted);font-size:14px;text-align:center;padding:24px 0}
 footer{color:var(--muted);font-size:13px}
+footer a{color:var(--accent)}
+.toplinks{margin-top:10px}
+.toplinks .btn{min-height:44px;font-size:15px;display:inline-flex;align-items:center;text-decoration:none}
+.welcome{background:var(--accent2);border:1px solid var(--accent);border-radius:12px;padding:14px 16px}
+.welcome p{margin:0 0 8px}
+.bmc{display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:0 22px;border-radius:12px;background:#ffdd00;color:#1f1f1f;font-weight:800;text-decoration:none}
+.tour{position:fixed;inset:0;z-index:50}
+.tour-spot{position:fixed;border-radius:12px;box-shadow:0 0 0 9999px rgba(10,16,12,.62);pointer-events:none;transition:all .25s}
+.tour-spot.none{left:50%;top:40%;width:0;height:0}
+.tour-bub{position:fixed;left:16px;right:16px;max-width:420px;margin:0 auto;background:var(--surface);color:var(--ink);border-radius:14px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.tour-step{margin:0;font-size:13px;color:var(--muted)}
+.tour-title{margin:2px 0 6px;font-size:18px;font-weight:800}
+.tour-text{margin:0 0 12px;font-size:15px}
+.tour-x{margin-left:auto;background:none;border:0;color:var(--muted);min-height:44px;padding:0 8px;cursor:pointer;text-decoration:underline}
+@media (prefers-reduced-motion:reduce){.tour-spot{transition:none}}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
 @media (max-width:420px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}h1{font-size:26px}}
 </style>
@@ -88,14 +107,26 @@ footer{color:var(--muted);font-size:13px}
   <header>
     <h1>ShotFind</h1>
     <p class="lead">チームの試合写真から、わが子が写っている写真だけをAIで探します。登録なし。写真も顔データも、この端末の外には出ません。</p>
+    <div class="row toplinks">
+      <button class="btn sub" id="tourBtn" type="button">チュートリアル（1分）</button>
+      <a class="btn sub" href="help.html">使い方・Q&amp;A</a>
+    </div>
   </header>
+
+  <div class="welcome" id="welcome" hidden>
+    <p><b>はじめての方へ</b>　サンプルの絵を使って、1分で使い方を案内します。</p>
+    <div class="row">
+      <button class="btn" id="welcomeGo" type="button">チュートリアルを見る</button>
+      <button class="btn sub" id="welcomeSkip" type="button">あとで</button>
+    </div>
+  </div>
 
   <p class="banner">試作版です。帽子やヘルメットで顔が隠れた写真、遠くて顔が小さい写真は見落とすことがあります。</p>
 
   <section class="card" aria-labelledby="h-ref">
     <h2 id="h-ref"><span class="num">1</span>わが子の顔写真</h2>
     <p class="hint">正面の顔写真を3〜10枚選んでください。帽子あり・なし、角度違いがあると見つけやすくなります。写真に何人か写っている場合は、いちばん大きい顔を使います。</p>
-    <label class="pick">顔写真を選ぶ<input id="refInput" type="file" accept="image/*" multiple></label>
+    <label class="pick" id="refPick">顔写真を選ぶ<input id="refInput" type="file" accept="image/*" multiple></label>
     <div class="refs" id="refs"></div>
   </section>
 
@@ -158,10 +189,34 @@ footer{color:var(--muted);font-size:13px}
     <div class="grid" id="grid"></div>
   </section>
 
+  <section class="card support" id="support" aria-labelledby="h-sup">
+    <h2 id="h-sup">ShotFind を応援する</h2>
+    <p class="hint">ShotFind は無料・広告なしで、少年野球の親が個人で作っています。役に立ったら、コーヒー1杯分の応援をいただけると続ける力になります。</p>
+    <a class="bmc" id="bmcLink" href="#" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 8h13v5a6 6 0 0 1-6 6H10a6 6 0 0 1-6-6zM17 9h1.5a2.5 2.5 0 0 1 0 5H17" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 3c0 1.5 1 1.5 1 3M12 3c0 1.5 1 1.5 1 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Buy Me a Coffee で応援する
+    </a>
+  </section>
+
   <footer>
     <p>顔の照合には、ブラウザの中で動くオープンソースのAI（Human ライブラリ）を使っています。最初の1回だけ、AIのモデル（数MB）を読み込みます。</p>
+    <p>同じシリーズ：<a href="https://yatti3g-byte.github.io/TapScore/">TapScore</a>・<a href="https://yatti3g-byte.github.io/form-note/">FormNote</a></p>
   </footer>
 </main>
+
+<div class="tour" id="tour" hidden>
+  <div class="tour-spot" id="tourSpot"></div>
+  <div class="tour-bub" id="tourBub" role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+    <p class="tour-step" id="tourStep"></p>
+    <p class="tour-title" id="tourTitle"></p>
+    <p class="tour-text" id="tourText"></p>
+    <div class="row">
+      <button class="btn sub" id="tourPrev" type="button">戻る</button>
+      <button class="btn" id="tourNext" type="button">次へ</button>
+      <button class="tour-x" id="tourEnd" type="button">終了</button>
+    </div>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@vladmandic/human@3.3.6/dist/human.js"></script>
 <script>
@@ -492,6 +547,7 @@ function saveFiles(files) {
 }
 
 $('share').addEventListener('click', async () => {
+  if (sampleMode) { status('これはチュートリアルのサンプルです。'); return; }
   const files = photos.filter(isSel).map(p => p.file);
   if (!files.length) { status('送る写真が選ばれていません。'); return; }
   try {
@@ -507,10 +563,126 @@ $('share').addEventListener('click', async () => {
 });
 
 $('save').addEventListener('click', () => {
+  if (sampleMode) { status('これはチュートリアルのサンプルです。'); return; }
   const files = photos.filter(isSel).map(p => p.file);
   if (!files.length) { status('保存する写真が選ばれていません。'); return; }
   saveFiles(files);
 });
+
+// ---- Buy Me a Coffee ----
+// ↓ Buy Me a Coffee のユーザー名を入れてください（空のままだと応援欄は表示されません）
+const BMC_USER = '';
+if (BMC_USER) $('bmcLink').href = 'https://www.buymeacoffee.com/' + encodeURIComponent(BMC_USER);
+else $('support').hidden = true;
+
+// ---- チュートリアル ----
+// サンプルの「試合写真」を絵で作る。n人のうち me 番目がわが子（-1ならいない）
+function sampleThumb(n, me, sky) {
+  let kids = '', box = null;
+  for (let k = 0; k < n; k++) {
+    const cx = 240 * (k + 1) / (n + 1), mine = k === me;
+    kids += `<g transform="translate(${cx},118)"><path d="M-30 52q0-40 30-40t30 40z" fill="#fff" stroke="#c9cfc8"/><circle cy="-6" r="24" fill="${mine ? '#e5b98f' : '#f1d3b3'}"/><path d="M-27-12a27 24 0 0 1 54 0v4h-54z" fill="#1f4f8a"/></g>`;
+    if (mine) box = [(cx - 32) / 240, 76 / 180, 64 / 240, 64 / 180];
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180"><rect width="240" height="180" fill="${sky}"/><path d="M0 130q120-26 240 0v50H0z" fill="#6aaa7b"/><path d="M70 180q50-30 100 0z" fill="#cfae7e"/>${kids}<text x="8" y="20" font-size="13" fill="#6b756e" font-family="sans-serif">サンプル</text></svg>`;
+  return { thumb: 'data:image/svg+xml,' + encodeURIComponent(svg), box };
+}
+const SAMPLE = [[3, 1, .91], [1, 0, .88], [4, 2, .79], [2, 0, .66], [3, -1, .41], [2, -1, .37], [5, -1, .33], [1, -1, .24]];
+let sampleMode = false, saved = null;
+function enterSample() {
+  if (sampleMode) return;
+  saved = { photos, hidden: $('result').hidden, thr: $('thr').value, only: $('onlyHit').checked };
+  sampleMode = true;
+  photos = SAMPLE.map(([n, me, best], i) => {
+    const s = sampleThumb(n, me, i % 2 ? '#dfe9e2' : '#e3ebf2');
+    return { file: { name: 'サンプル写真' }, thumb: s.thumb, best, box: s.box, sel: null };
+  });
+  $('thr').value = 55; $('onlyHit').checked = true;
+  $('result').hidden = false;
+  render();
+}
+function leaveSample() {
+  if (!sampleMode) return;
+  sampleMode = false;
+  photos = saved.photos; $('thr').value = saved.thr; $('onlyHit').checked = saved.only;
+  $('result').hidden = saved.hidden;
+  render();
+}
+
+const STEPS = [
+  { t: 'ShotFind へようこそ', x: 'チームの試合写真から、わが子が写っている写真だけをAIで探します。サンプルの絵を使って、1分で流れを案内します。' },
+  { el: 'refPick', t: '① わが子の顔写真を登録', x: 'まず、わが子の顔写真を3〜10枚選びます。正面の顔に加えて、帽子をかぶった写真や角度の違う写真があると見つけやすくなります。' },
+  { el: 'drop', t: '② 試合写真を選ぶ', x: 'LINEアルバムの写真は、先にLINEでダウンロードしてスマホに保存しておきます。iPhoneは、写真を選ぶ画面で指でなぞるとまとめて選べます。' },
+  { el: 'run', t: '③ うちの子をさがす', x: 'このボタンを押すと、AIが1枚ずつ顔を照合します。照合はスマホの中だけで行い、写真はどこにも送りません。' },
+  { el: 'grid', sample: true, t: '④ 結果を見る', x: '見つかった写真は似ている順に並び、わが子の顔に緑の枠がつきます。右下の数字が「似ている度」です（ここに出ているのはサンプルの絵です）。' },
+  { el: 'thrBox', sample: true, t: '⑤ 似ている度で調整', x: 'ほかの子が混ざるときは数字を上げ、見落としが多いときは下げます。写真を調べ直さないので、すぐに切り替わります。' },
+  { el: 'grid', sample: true, first: true, t: '⑥ 送る写真を選ぶ', x: '写真をタップすると、選ぶ・外すを切り替えられます。右上に ✓ がついている写真が送る写真です。' },
+  { el: 'share', sample: true, t: '⑦ LINEで送る', x: 'このボタンを押すと共有メニューが開きます。LINEを選べば、選んだ写真をそのまま家族や祖父母に送れます。' },
+  { t: '準備完了です', x: 'さっそく、わが子の顔写真から登録してみましょう。困ったときは「使い方・Q&A」も見てください。' }
+];
+$('thr').parentElement.id = 'thrBox';
+let tourAt = 0;
+const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+function place() {
+  const s = STEPS[tourAt], spot = $('tourSpot'), bub = $('tourBub');
+  let target = s.el ? $(s.el) : null;
+  if (target && s.first && target.firstElementChild) target = target.firstElementChild;
+  if (!target) {
+    spot.classList.add('none'); spot.removeAttribute('style');
+    bub.style.top = '50%'; bub.style.bottom = 'auto'; bub.style.transform = 'translateY(-50%)';
+    return;
+  }
+  spot.classList.remove('none');
+  const r = target.getBoundingClientRect(), pad = 8, vh = innerHeight;
+  const h = Math.min(r.height + pad * 2, vh * 0.5);
+  Object.assign(spot.style, { left: r.left - pad + 'px', top: r.top - pad + 'px', width: r.width + pad * 2 + 'px', height: h + 'px' });
+  bub.style.transform = 'none';
+  if (r.top + h / 2 > vh / 2) { bub.style.top = '16px'; bub.style.bottom = 'auto'; }
+  else { bub.style.bottom = '16px'; bub.style.top = 'auto'; }
+}
+function showStep(i) {
+  tourAt = Math.max(0, Math.min(STEPS.length - 1, i));
+  const s = STEPS[tourAt];
+  if (s.sample) enterSample(); else leaveSample();
+  $('tourStep').textContent = `${tourAt + 1} / ${STEPS.length}`;
+  $('tourTitle').textContent = s.t;
+  $('tourText').textContent = s.x;
+  $('tourPrev').hidden = tourAt === 0;
+  $('tourNext').textContent = tourAt === STEPS.length - 1 ? 'はじめる' : '次へ';
+  const el = s.el && $(s.el);
+  if (el) el.scrollIntoView({ block: 'center', behavior: reduce() ? 'auto' : 'smooth' });
+  place();
+  setTimeout(place, reduce() ? 50 : 450);
+  $('tourNext').focus();
+}
+function startTour() {
+  $('welcome').hidden = true;
+  try { localStorage.setItem('shotfind-tour', '1'); } catch (e) {}
+  $('tour').hidden = false;
+  showStep(0);
+}
+function endTour() {
+  $('tour').hidden = true;
+  leaveSample();
+  scrollTo({ top: 0, behavior: reduce() ? 'auto' : 'smooth' });
+}
+$('tourBtn').addEventListener('click', startTour);
+$('welcomeGo').addEventListener('click', startTour);
+$('welcomeSkip').addEventListener('click', () => { $('welcome').hidden = true; try { localStorage.setItem('shotfind-tour', '1'); } catch (e) {} });
+$('tourNext').addEventListener('click', () => (tourAt === STEPS.length - 1 ? endTour() : showStep(tourAt + 1)));
+$('tourPrev').addEventListener('click', () => showStep(tourAt - 1));
+$('tourEnd').addEventListener('click', endTour);
+document.addEventListener('keydown', e => {
+  if ($('tour').hidden) return;
+  if (e.key === 'Escape') endTour();
+  else if (e.key === 'ArrowRight') $('tourNext').click();
+  else if (e.key === 'ArrowLeft' && tourAt > 0) showStep(tourAt - 1);
+});
+addEventListener('resize', () => { if (!$('tour').hidden) place(); });
+addEventListener('scroll', () => { if (!$('tour').hidden) place(); }, { passive: true });
+let seen = false;
+try { seen = localStorage.getItem('shotfind-tour') === '1'; } catch (e) {}
+if (!seen) $('welcome').hidden = false;
 
 if (!window.Human) status('AIライブラリを読み込めませんでした。通信状態を確認して、ページを再読み込みしてください。');
 }
