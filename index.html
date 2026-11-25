@@ -28,6 +28,7 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]){--paper:#141a16;--surface:#1e2721;--ink:#e8ede9;--muted:#98a49b;--line:#33423a;--accent:#58b87e;--accent2:#25382c;--warn:#3a3418;--miss:#5d6a61;color-scheme:dark}}
 :root[data-theme=dark]{--paper:#141a16;--surface:#1e2721;--ink:#e8ede9;--muted:#98a49b;--line:#33423a;--accent:#58b87e;--accent2:#25382c;--warn:#3a3418;--miss:#5d6a61;color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
+[hidden]{display:none!important}
 html,body{margin:0}
 body{background:var(--paper);color:var(--ink);font:16px/1.55 "Hiragino Sans","Noto Sans JP",system-ui,sans-serif;-webkit-text-size-adjust:100%;overflow-x:clip}
 button,input{font:inherit;color:inherit}
@@ -52,6 +53,12 @@ h1{font-size:30px;line-height:1.2;margin:8px 0 2px;letter-spacing:.02em}
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 label.chk{display:flex;gap:8px;align-items:center;font-size:14px;min-height:44px;cursor:pointer}
 label.chk input{width:20px;height:20px;accent-color:var(--accent)}
+.how{background:var(--paper);border-radius:8px;padding:10px 12px}
+.how summary{cursor:pointer;font-weight:700;color:var(--ink);min-height:28px}
+.how ol,.how ul{margin:8px 0 0;padding-left:1.4em}
+.drop{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;border-radius:12px;padding:4px;transition:background .15s}
+.drop.over{background:var(--accent2);outline:2px dashed var(--accent)}
+.how li{margin:4px 0}
 .status{font-size:14px;color:var(--muted);min-height:1.5em;margin:10px 0 0}
 .bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin-top:8px;display:none}
 .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
@@ -94,9 +101,33 @@ footer{color:var(--muted);font-size:13px}
 
   <section class="card" aria-labelledby="h-pool">
     <h2 id="h-pool"><span class="num">2</span>チームの試合写真</h2>
-    <p class="hint">LINEアルバムから保存した写真などをまとめて選んでください。</p>
-    <label class="pick">試合写真を選ぶ<input id="poolInput" type="file" accept="image/*" multiple></label>
-    <p class="status" id="poolCount">まだ選んでいません</p>
+    <p class="hint">LINEアルバムの写真は、このページから直接は開けません。先にスマホへ保存してから選んでください。</p>
+    <details class="hint how">
+      <summary>LINEアルバムの写真をスマホに保存する方法</summary>
+      <ol>
+        <li>LINEでチームのトークを開き、アルバムを開く。</li>
+        <li>右上のメニュー（︙）から「ダウンロード」を選ぶ。全部、または選んだ写真だけを保存できます。</li>
+        <li>保存しても、ほかのメンバーには通知されません。</li>
+        <li>下の「試合写真を選ぶ」を押し、iPhoneは「写真」の「アルバム」から、Androidは「参照」やフォルダからアルバム名のフォルダを開く。</li>
+      </ol>
+    </details>
+    <details class="hint how">
+      <summary>たくさんの写真をすばやく選ぶコツ</summary>
+      <ul>
+        <li><b>iPhone：</b>写真を選ぶ画面で、1枚目に指を置いたまま横へ、そのまま下へなぞると、なぞった範囲がまとめて選ばれます。</li>
+        <li><b>Android・パソコン：</b>「フォルダごと選ぶ」で、保存したアルバムのフォルダを選ぶと中の写真を全部読み込みます。</li>
+        <li><b>パソコン：</b>フォルダや写真を、この枠の中へドラッグしても読み込めます。</li>
+        <li>何回かに分けて選ぶと、写真は追加されていきます。</li>
+      </ul>
+    </details>
+    <div class="drop" id="drop">
+      <label class="pick">試合写真を選ぶ<input id="poolInput" type="file" accept="image/*" multiple></label>
+      <label class="pick" id="dirPick">フォルダごと選ぶ<input id="dirInput" type="file" webkitdirectory multiple></label>
+    </div>
+    <div class="row">
+      <p class="status" id="poolCount">まだ選んでいません</p>
+      <button class="btn sub" id="clearPool" type="button" hidden>選んだ写真をクリア</button>
+    </div>
     <div class="row">
       <label class="chk"><input type="checkbox" id="fine" checked>小さく写った顔も探す（時間は約5倍）</label>
     </div>
@@ -237,6 +268,7 @@ function updateRun() {
   const n = refs.filter(r => r.ok).length;
   $('run').disabled = busy || !n || !pool.length;
   $('poolCount').textContent = pool.length ? pool.length + '枚を選びました' : 'まだ選んでいません';
+  $('clearPool').hidden = !pool.length || busy;
 }
 
 $('refInput').addEventListener('change', async e => {
@@ -265,11 +297,55 @@ $('refInput').addEventListener('change', async e => {
   busy = false; updateRun();
 });
 
-$('poolInput').addEventListener('change', e => {
-  pool = [...e.target.files];
-  e.target.value = '';
+const isImage = f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic|heif|gif)$/i.test(f.name);
+function addToPool(files) {
+  const seen = new Set(pool.map(f => f.name + ':' + f.size));
+  let added = 0;
+  for (const f of files) {
+    if (!isImage(f)) continue;
+    const k = f.name + ':' + f.size;
+    if (seen.has(k)) continue;
+    seen.add(k); pool.push(f); added++;
+  }
+  status(added ? `${added}枚を追加しました。` : '新しく追加できる写真はありませんでした。');
   updateRun();
+}
+for (const id of ['poolInput', 'dirInput']) {
+  $(id).addEventListener('change', e => {
+    addToPool([...e.target.files]);
+    e.target.value = '';
+  });
+}
+$('clearPool').addEventListener('click', () => { pool = []; status(''); updateRun(); });
+
+// ドラッグ＆ドロップ（フォルダも中まで読む）
+function readEntry(entry) {
+  return new Promise(resolve => {
+    if (entry.isFile) { entry.file(f => resolve([f]), () => resolve([])); return; }
+    if (!entry.isDirectory) { resolve([]); return; }
+    const reader = entry.createReader(), out = [];
+    const next = () => reader.readEntries(async list => {
+      if (!list.length) { resolve(out); return; }
+      for (const en of list) out.push(...await readEntry(en));
+      next();
+    }, () => resolve(out));
+    next();
+  });
+}
+const drop = $('drop');
+['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(t => drop.addEventListener(t, () => drop.classList.remove('over')));
+drop.addEventListener('drop', async e => {
+  e.preventDefault();
+  const items = [...(e.dataTransfer.items || [])];
+  const entries = items.map(it => it.webkitGetAsEntry && it.webkitGetAsEntry()).filter(Boolean);
+  let files = [];
+  if (entries.length) { status('フォルダを読み込んでいます…'); for (const en of entries) files.push(...await readEntry(en)); }
+  else files = [...e.dataTransfer.files];
+  addToPool(files);
 });
+// iPhone / iPad はフォルダ選択に対応していないので隠す
+if (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) $('dirPick').hidden = true;
 
 $('run').addEventListener('click', async () => {
   if (busy) return;
