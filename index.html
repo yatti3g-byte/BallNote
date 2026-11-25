@@ -680,13 +680,24 @@ function fitViewer() {
 }
 $('vImg').addEventListener('load', fitViewer);
 addEventListener('resize', () => { if (!$('viewer').hidden) fitViewer(); });
-function openViewer(i) { vItems = viewList.slice(); vAt = i; $('viewer').hidden = false; showViewer(); $('vClose').focus(); }
-function closeViewer() {
+// 拡大表示を開くと履歴を1つ足す。ブラウザの「戻る」で拡大表示だけを閉じ、結果の一覧に戻る。
+let vHist = false, vScroll = 0;
+function openViewer(i) {
+  vItems = viewList.slice(); vAt = i;
+  vScroll = scrollY;
+  if (!vHist) { try { history.pushState({ shotfindViewer: true }, ''); vHist = true; } catch (e) {} }
+  $('viewer').hidden = false; showViewer(); $('vClose').focus();
+}
+function closeViewer(fromBack) {
+  if ($('viewer').hidden) return;
   $('viewer').hidden = true;
   if (vUrl) { URL.revokeObjectURL(vUrl); vUrl = null; }
   $('vImg').removeAttribute('src');
   render();
+  scrollTo(0, vScroll);
+  if (vHist) { vHist = false; if (fromBack !== true) history.back(); }
 }
+addEventListener('popstate', () => { if (!$('viewer').hidden) closeViewer(true); });
 const vMove = d => { const n = vAt + d; if (n >= 0 && n < vItems.length) { vAt = n; showViewer(); } };
 $('vClose').addEventListener('click', closeViewer);
 $('vPrev').addEventListener('click', () => vMove(-1));
