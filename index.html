@@ -571,8 +571,8 @@ $('save').addEventListener('click', () => {
 
 // ---- Buy Me a Coffee ----
 // ↓ Buy Me a Coffee のユーザー名を入れてください（空のままだと応援欄は表示されません）
-const BMC_USER = '';
-if (BMC_USER) $('bmcLink').href = 'https://www.buymeacoffee.com/' + encodeURIComponent(BMC_USER);
+const BMC_USER = 'formnote';
+if (BMC_USER) $('bmcLink').href = 'https://buymeacoffee.com/' + encodeURIComponent(BMC_USER);
 else $('support').hidden = true;
 
 // ---- チュートリアル ----
