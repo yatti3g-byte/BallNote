@@ -89,6 +89,26 @@ footer a{color:var(--accent)}
 .welcome{background:var(--accent2);border:1px solid var(--accent);border-radius:12px;padding:14px 16px}
 .welcome p{margin:0 0 8px}
 .bmc{display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:0 22px;border-radius:12px;background:#ffdd00;color:#1f1f1f;font-weight:800;text-decoration:none}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}
+.tab{min-height:44px;padding:0 14px;border-radius:22px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-size:14px;font-weight:700}
+.tab[aria-selected=true]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.tab b{font-variant-numeric:tabular-nums;margin-left:4px}
+.tabnote{min-height:1.4em}
+.btn.small{min-height:44px;font-size:14px;padding:0 14px}
+.small-note{font-size:13px;margin:4px 0 0}
+.linkbtn{background:none;border:0;color:var(--accent);text-decoration:underline;cursor:pointer;font-size:13px;min-height:32px;padding:0 4px}
+.ph-card .tick{border:0;padding:0;cursor:pointer}
+.ph-card .tickhit{position:absolute;right:0;top:0;width:52px;height:52px;background:none;border:0;cursor:pointer;padding:0}
+.ph-card.check{border-color:#e0b000}
+.badge.warn{background:#8a6a00}
+.viewer{position:fixed;inset:0;z-index:40;background:#0b0f0c;color:#fff;display:flex;flex-direction:column}
+.v-top,.v-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px}
+.v-stage{flex:1;display:grid;place-items:center;min-height:0;padding:0 8px;touch-action:pan-y}
+.v-wrap{position:relative;line-height:0;max-width:100%;max-height:100%}
+.v-wrap img{display:block;border-radius:6px}
+.v-info{margin:0;text-align:center;font-size:14px;color:#cfd8d2;min-height:1.5em}
+.v-btn{min-height:44px;padding:0 14px;white-space:nowrap;border-radius:10px;border:1px solid #3a463e;background:#1b231e;color:#fff;cursor:pointer;font-weight:700}
+.v-btn[disabled]{opacity:.35}
 .tour{position:fixed;inset:0;z-index:50}
 .tour-spot{position:fixed;border-radius:12px;box-shadow:0 0 0 9999px rgba(10,16,12,.62);pointer-events:none;transition:all .25s}
 .tour-spot.none{left:50%;top:40%;width:0;height:0}
@@ -106,7 +126,7 @@ footer a{color:var(--accent)}
 <main>
   <header>
     <h1>ShotFind</h1>
-    <p class="lead">チームの試合写真から、わが子が写っている写真だけをAIで探します。登録なし。写真も顔データも、この端末の外には出ません。</p>
+    <p class="lead">チームの試合写真から、わが子が写っている写真だけをAIで探します。登録なし・無料。写真と顔の特徴データは外部のサーバーに送らず、この端末の中で処理します。</p>
     <div class="row toplinks">
       <button class="btn sub" id="tourBtn" type="button">チュートリアル（1分）</button>
       <a class="btn sub" href="help.html">使い方・Q&amp;A</a>
@@ -125,9 +145,11 @@ footer a{color:var(--accent)}
 
   <section class="card" aria-labelledby="h-ref">
     <h2 id="h-ref"><span class="num">1</span>わが子の顔写真</h2>
-    <p class="hint">正面の顔写真を3〜10枚選んでください。帽子あり・なし、角度違いがあると見つけやすくなります。写真に何人か写っている場合は、いちばん大きい顔を使います。</p>
+    <p class="hint">照合に使う、わが子の正面の顔写真を3〜10枚選んでください。帽子あり・なし、角度違いがあると見つけやすくなります。写真に何人か写っている場合は、いちばん大きい顔を使います。</p>
     <label class="pick" id="refPick">顔写真を選ぶ<input id="refInput" type="file" accept="image/*" multiple></label>
     <div class="refs" id="refs"></div>
+    <label class="chk"><input type="checkbox" id="keepRefs">この端末に顔の特徴を保存して、次回も使う</label>
+    <p class="hint small-note">保存するのは照合用の数値と小さな顔の画像だけで、この端末のブラウザの中にだけ残ります。外部には送りません。<button class="linkbtn" id="forgetRefs" type="button" hidden>保存した顔を消す</button></p>
   </section>
 
   <section class="card" aria-labelledby="h-pool">
@@ -174,18 +196,22 @@ footer a{color:var(--accent)}
     <h2 id="h-res">結果</h2>
     <p class="sum" id="sum"></p>
     <div class="slider">
-      <label for="thr">似ている度</label>
+      <label for="thr">一致度（目安）</label>
       <input type="range" id="thr" min="30" max="85" value="55">
-      <output id="thrOut">55%</output>
+      <output id="thrOut">55</output>
     </div>
-    <p class="hint">この数字より似ている写真を「うちの子」にします。上げると間違いが減り、下げると見落としが減ります。写真をタップすると選ぶ・外すを切り替えられます。</p>
-    <div class="row">
-      <label class="chk"><input type="checkbox" id="onlyHit" checked>うちの子の写真だけ表示</label>
+    <p class="hint">数字が高いほど、選んだ顔写真に似ています（正解の確率ではありません）。この数字以上の写真を「見つかった写真」にします。ほかの子が混ざるときは上げ、見落としが多いときは下げてください。</p>
+    <div class="tabs" id="tabs" role="tablist" aria-label="表示する写真"></div>
+    <p class="hint tabnote" id="tabNote"></p>
+    <div class="row selrow">
+      <button class="btn sub small" id="selAll" type="button">表示中をすべて選ぶ</button>
+      <button class="btn sub small" id="selNone" type="button">表示中をすべて外す</button>
     </div>
     <div class="row">
       <button class="btn" id="share">選んだ写真を送る（LINEなど）</button>
       <button class="btn sub" id="save">端末に保存</button>
     </div>
+    <p class="hint">写真をタップすると大きく表示します。右上の丸で、選ぶ・外すを切り替えます。</p>
     <div class="grid" id="grid"></div>
   </section>
 
@@ -199,10 +225,26 @@ footer a{color:var(--accent)}
   </section>
 
   <footer>
-    <p>顔の照合には、ブラウザの中で動くオープンソースのAI（Human ライブラリ）を使っています。最初の1回だけ、AIのモデル（数MB）を読み込みます。</p>
+    <p>顔の照合には、ブラウザの中で動くオープンソースのAI（Human ライブラリ）を使っています。最初に開いたとき、AIのプログラムとモデル（数MB）をインターネットから読み込みますが、写真は送りません。写真が外に出るのは、自分で共有したときだけです。</p>
     <p>同じシリーズ：<a href="https://yatti3g-byte.github.io/TapScore/">TapScore</a>・<a href="https://yatti3g-byte.github.io/form-note/">FormNote</a></p>
   </footer>
 </main>
+
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="写真を大きく表示">
+  <div class="v-top">
+    <span id="vCount"></span>
+    <button class="v-btn" id="vClose" type="button">閉じる</button>
+  </div>
+  <div class="v-stage" id="vStage">
+    <div class="v-wrap" id="vWrap"><img id="vImg" alt=""><div class="box" id="vBox" hidden></div></div>
+  </div>
+  <p class="v-info" id="vInfo"></p>
+  <div class="v-bottom">
+    <button class="v-btn" id="vPrev" type="button" aria-label="前の写真">‹ 前へ</button>
+    <button class="btn" id="vSel" type="button"></button>
+    <button class="v-btn" id="vNext" type="button" aria-label="次の写真">次へ ›</button>
+  </div>
+</div>
 
 <div class="tour" id="tour" hidden>
   <div class="tour-spot" id="tourSpot"></div>
@@ -310,13 +352,13 @@ function renderRefs() {
     const d = document.createElement('div');
     d.className = 'ref' + (r.ok ? '' : ' bad');
     const img = document.createElement('img');
-    img.alt = r.ok ? '登録した顔' : '顔が見つからない写真';
+    img.alt = r.ok ? '照合に使う顔' : '顔を検出できなかった写真';
     img.src = r.thumb;
     const cap = document.createElement('div');
-    cap.textContent = r.ok ? '登録済み' : '顔なし';
+    cap.textContent = r.ok ? (r.saved ? '保存済み' : '照合に使用') : '顔を検出できず';
     const x = document.createElement('button');
     x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', 'この顔写真を外す');
-    x.addEventListener('click', () => { refs.splice(i, 1); renderRefs(); updateRun(); });
+    x.addEventListener('click', () => { refs.splice(i, 1); renderRefs(); updateRun(); persistRefs(); });
     d.append(img, cap, x);
     box.append(d);
   });
@@ -350,10 +392,45 @@ $('refInput').addEventListener('change', async e => {
       await yieldUI();
     }
     const bad = refs.filter(r => !r.ok).length;
-    status(bad ? `顔が見つからない写真が${bad}枚ありました。×で外してください。` : '顔写真を登録しました。');
+    status(bad ? `顔を検出できなかった写真が${bad}枚ありました。×で外してください。` : '顔写真を読み込みました。');
+    persistRefs();
   } catch (err) { status('エラー：' + err.message); }
   busy = false; updateRun();
 });
+
+// ---- 顔の特徴を端末に保存（希望した人だけ） ----
+const REF_KEY = 'shotfind-refs';
+function persistRefs() {
+  try {
+    if (!$('keepRefs').checked) { localStorage.removeItem(REF_KEY); $('forgetRefs').hidden = true; return; }
+    const data = refs.filter(r => r.ok).map(r => ({ emb: Array.from(r.emb), thumb: r.thumb }));
+    localStorage.setItem(REF_KEY, JSON.stringify(data));
+    $('forgetRefs').hidden = !data.length;
+  } catch (e) { status('この端末には顔の特徴を保存できませんでした。'); }
+}
+$('keepRefs').addEventListener('change', () => {
+  persistRefs();
+  status($('keepRefs').checked ? '顔の特徴をこの端末に保存しました。次回も選び直さずに使えます。' : '保存した顔の特徴を消しました。');
+});
+$('forgetRefs').addEventListener('click', () => {
+  try { localStorage.removeItem(REF_KEY); } catch (e) {}
+  $('keepRefs').checked = false; $('forgetRefs').hidden = true;
+  refs.forEach(r => { r.saved = false; });
+  renderRefs();
+  status('保存した顔の特徴を消しました。いま表示中の顔写真は、このページを閉じると消えます。');
+});
+try {
+  const saved = JSON.parse(localStorage.getItem(REF_KEY) || '[]');
+  if (Array.isArray(saved) && saved.length) {
+    refs = saved.filter(s => Array.isArray(s.emb) && typeof s.thumb === 'string' && s.thumb.startsWith('data:image/'))
+      .map(s => ({ file: null, emb: s.emb, thumb: s.thumb, ok: true, saved: true }));
+    if (refs.length) {
+      $('keepRefs').checked = true; $('forgetRefs').hidden = false;
+      renderRefs();
+      $('status').textContent = `前回保存した顔写真${refs.length}枚を使います。`;
+    }
+  }
+} catch (e) {}
 
 const isImage = f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic|heif|gif)$/i.test(f.name);
 function addToPool(files) {
@@ -374,7 +451,13 @@ for (const id of ['poolInput', 'dirInput']) {
     e.target.value = '';
   });
 }
-$('clearPool').addEventListener('click', () => { pool = []; status(''); updateRun(); });
+$('clearPool').addEventListener('click', () => {
+  pool = []; photos = [];
+  for (const e of faceCache.values()) if (e.thumb && e.thumb.startsWith('blob:')) URL.revokeObjectURL(e.thumb);
+  faceCache.clear();
+  $('result').hidden = true;
+  status(''); updateRun();
+});
 
 // ドラッグ＆ドロップ（フォルダも中まで読む）
 function readEntry(entry) {
@@ -405,7 +488,7 @@ drop.addEventListener('drop', async e => {
 // iPhone / iPad はフォルダ選択に対応していないので隠す
 if (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) $('dirPick').hidden = true;
 
-// 1枚ごとの顔データを覚えておく。顔写真を足したり似ている度を変えても、写真を調べ直さない。
+// 1枚ごとの顔データを覚えておく。顔写真を足したり一致度を変えても、写真を調べ直さない。
 const faceCache = new Map(); // key -> {faces:[{emb, box(0〜1)}], thumb}
 let stopReq = false;
 const keyOf = (f, fine) => f.name + ':' + f.size + ':' + f.lastModified + (fine ? ':fine' : '');
@@ -448,12 +531,13 @@ $('run').addEventListener('click', async () => {
       if (!entry) {
         const c = pendingIdx === i ? await pending : await loadCanvas(file, max).catch(() => null);
         startLoad(i + 1);
-        entry = { faces: [], thumb: null };
+        entry = { faces: [], thumb: null, state: 'error' };
         if (c) {
           try {
             const found = fine ? await detectTiled(c) : await detectFaces(c);
             entry.faces = found.map(f => ({ emb: f.emb, box: [f.box[0] / c.width, f.box[1] / c.height, f.box[2] / c.width, f.box[3] / c.height] }));
-          } catch (err) { /* AIで読めない写真は0点 */ }
+            entry.state = entry.faces.length ? 'ok' : 'noface';
+          } catch (err) { entry.state = 'error'; }
           entry.thumb = await makeThumb(c);
         } else {
           entry.thumb = URL.createObjectURL(file); // 読めない形式（HEICなど）
@@ -466,7 +550,7 @@ $('run').addEventListener('click', async () => {
         const s = human.match.similarity(r, f.emb);
         if (s > best) { best = s; box = f.box; }
       }
-      photos.push({ file, thumb: entry.thumb, best, box, sel: null });
+      photos.push({ file, thumb: entry.thumb, best, box, sel: null, state: entry.state });
       const done = i + 1, el = (performance.now() - t0) / 1000;
       const left = fresh ? Math.round(el / done * (pool.length - done)) : 0;
       status(`さがしています… ${done}/${pool.length}枚` + (left > 5 ? `（残り約${left >= 60 ? Math.round(left / 60) + '分' : left + '秒'}）` : ''));
@@ -484,57 +568,143 @@ $('run').addEventListener('click', async () => {
 });
 
 const thr = () => Number($('thr').value) / 100;
-const isSel = p => (p.sel === null ? p.best >= thr() : p.sel);
+const CHECK_BAND = 0.12; // しきい値のすぐ下は「確認をおすすめ」
+const cat = p => p.state !== 'ok' ? 'none' : p.best >= thr() ? 'hit' : p.best >= thr() - CHECK_BAND ? 'check' : 'other';
+const isSel = p => (p.sel === null ? cat(p) === 'hit' : p.sel);
+const TABS = [
+  { id: 'hit', label: '見つかった写真', note: '' },
+  { id: 'check', label: '確認をおすすめ', note: '一致度がしきい値に近い写真です。わが子が写っていないか、大きく表示して確かめてください。' },
+  { id: 'none', label: '顔を検出できなかった写真', note: 'AIが顔を見つけられなかった写真です（後ろ姿、帽子で隠れた顔、遠くて小さい顔など）。わが子が写っていることもあります。' },
+  { id: 'all', label: 'すべて', note: '' }
+];
+let tab = 'hit';
+let viewList = [];
+const reasonText = p => p.state === 'error' ? '読み込めず' : p.state === 'noface' ? '顔を検出できず' : '一致度 ' + Math.round(p.best * 100);
 
 function render() {
-  const t = thr(), only = $('onlyHit').checked;
-  $('thrOut').textContent = Math.round(t * 100) + '%';
-  const hits = photos.filter(p => p.best >= t).length;
+  const t = thr();
+  $('thrOut').textContent = Math.round(t * 100);
+  const count = { hit: 0, check: 0, none: 0, all: photos.length };
+  photos.forEach(p => { const c = cat(p); if (count[c] !== undefined) count[c]++; });
   const sel = photos.filter(isSel).length;
-  $('sum').innerHTML = '';
-  $('sum').append(document.createTextNode(`${photos.length}枚中 ${hits}枚`));
+  $('sum').replaceChildren(document.createTextNode(`見つかった写真 ${count.hit}枚`));
   const sm = document.createElement('small');
-  sm.textContent = `　（選択中 ${sel}枚）`;
+  sm.textContent = `　${photos.length}枚中・選択中 ${sel}枚`;
   $('sum').append(sm);
+
+  $('tabs').replaceChildren(...TABS.map(tb => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'tab'; b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', String(tab === tb.id));
+    b.append(document.createTextNode(tb.label));
+    const n = document.createElement('b'); n.textContent = count[tb.id];
+    b.append(n);
+    b.addEventListener('click', () => { tab = tb.id; render(); });
+    return b;
+  }));
+  $('tabNote').textContent = TABS.find(x => x.id === tab).note;
+
+  const order = { hit: 0, check: 1, other: 2, none: 3 };
+  viewList = photos.filter(p => tab === 'all' || cat(p) === tab)
+    .sort((a, b) => order[cat(a)] - order[cat(b)] || b.best - a.best);
   const grid = $('grid');
   grid.replaceChildren();
-  const list = photos.filter(p => !only || p.best >= t || p.sel === true).sort((a, b) => b.best - a.best);
-  if (!list.length) {
+  if (!viewList.length) {
     const e = document.createElement('p');
     e.className = 'empty';
-    e.textContent = 'この似ている度では見つかりませんでした。数字を下げてみてください。';
+    e.textContent = tab === 'hit' ? 'この一致度では見つかりませんでした。数字を下げるか、「確認をおすすめ」を見てください。' : 'ここに入る写真はありません。';
     grid.append(e);
   }
-  for (const p of list) {
+  viewList.forEach((p, i) => {
+    const c = cat(p), on = isSel(p);
     const d = document.createElement('div');
-    d.className = 'ph-card' + (p.best >= t ? ' hit' : '') + (isSel(p) ? ' sel' : ' off');
-    d.tabIndex = 0;
-    d.setAttribute('role', 'checkbox');
-    d.setAttribute('aria-checked', String(isSel(p)));
+    d.className = 'ph-card' + (c === 'hit' ? ' hit' : c === 'check' ? ' check' : '') + (on ? ' sel' : ' off');
     const img = document.createElement('img');
-    img.src = p.thumb; img.alt = p.file.name; img.loading = 'lazy';
+    img.src = p.thumb; img.alt = '写真を大きく表示'; img.loading = 'lazy';
+    img.tabIndex = 0;
+    img.addEventListener('click', () => openViewer(i));
+    img.addEventListener('keydown', ev => { if (ev.key === 'Enter') openViewer(i); });
     d.append(img);
-    if (p.box && p.best >= t) {
+    if (p.box && (c === 'hit' || c === 'check')) {
       const b = document.createElement('div');
       b.className = 'box';
       Object.assign(b.style, { left: p.box[0] * 100 + '%', top: p.box[1] * 100 + '%', width: p.box[2] * 100 + '%', height: p.box[3] * 100 + '%' });
       d.append(b);
     }
     const badge = document.createElement('span');
-    badge.className = 'badge';
-    badge.textContent = p.best ? Math.round(p.best * 100) + '%' : '顔なし';
+    badge.className = 'badge' + (c === 'check' || c === 'none' ? ' warn' : '');
+    badge.textContent = reasonText(p);
+    const hitArea = document.createElement('button');
+    hitArea.type = 'button'; hitArea.className = 'tickhit';
+    hitArea.setAttribute('role', 'checkbox'); hitArea.setAttribute('aria-checked', String(on));
+    hitArea.setAttribute('aria-label', on ? 'この写真を外す' : 'この写真を選ぶ');
+    hitArea.addEventListener('click', () => { p.sel = !isSel(p); render(); });
     const tick = document.createElement('span');
     tick.className = 'tick'; tick.textContent = '✓';
-    d.append(badge, tick);
-    const toggle = () => { p.sel = !isSel(p); render(); };
-    d.addEventListener('click', toggle);
-    d.addEventListener('keydown', ev => { if (ev.key === ' ' || ev.key === 'Enter') { ev.preventDefault(); toggle(); } });
+    d.append(badge, tick, hitArea);
     grid.append(d);
-  }
+  });
 }
 
 $('thr').addEventListener('input', () => { photos.forEach(p => { p.sel = null; }); render(); });
-$('onlyHit').addEventListener('change', render);
+$('selAll').addEventListener('click', () => { viewList.forEach(p => { p.sel = true; }); render(); });
+$('selNone').addEventListener('click', () => { viewList.forEach(p => { p.sel = false; }); render(); });
+
+// ---- 大きく表示 ----
+let vAt = 0, vUrl = null, vItems = [];
+function showViewer() {
+  const p = vItems[vAt];
+  if (vUrl) { URL.revokeObjectURL(vUrl); vUrl = null; }
+  $('vImg').style.width = $('vImg').style.height = '';
+  if (p.file instanceof Blob) { vUrl = URL.createObjectURL(p.file); $('vImg').src = vUrl; }
+  else $('vImg').src = p.thumb;
+  $('vImg').alt = `${vAt + 1}枚目の写真`;
+  const c = cat(p), box = $('vBox');
+  box.hidden = !(p.box && (c === 'hit' || c === 'check'));
+  if (!box.hidden) Object.assign(box.style, { left: p.box[0] * 100 + '%', top: p.box[1] * 100 + '%', width: p.box[2] * 100 + '%', height: p.box[3] * 100 + '%' });
+  $('vCount').textContent = `${vAt + 1} / ${vItems.length}`;
+  $('vInfo').textContent = reasonText(p) + (c === 'check' ? '（確認をおすすめ）' : '');
+  const on = isSel(p);
+  $('vSel').textContent = on ? '✓ 選択中' : 'この写真を選ぶ';
+  $('vSel').className = on ? 'btn' : 'btn sub';
+  $('vPrev').disabled = vAt === 0;
+  $('vNext').disabled = vAt === vItems.length - 1;
+}
+function fitViewer() {
+  const img = $('vImg'), st = $('vStage');
+  if (!img.naturalWidth) return;
+  const r = Math.min((st.clientWidth - 16) / img.naturalWidth, (st.clientHeight - 8) / img.naturalHeight, 4);
+  img.style.width = Math.floor(img.naturalWidth * r) + 'px';
+  img.style.height = Math.floor(img.naturalHeight * r) + 'px';
+}
+$('vImg').addEventListener('load', fitViewer);
+addEventListener('resize', () => { if (!$('viewer').hidden) fitViewer(); });
+function openViewer(i) { vItems = viewList.slice(); vAt = i; $('viewer').hidden = false; showViewer(); $('vClose').focus(); }
+function closeViewer() {
+  $('viewer').hidden = true;
+  if (vUrl) { URL.revokeObjectURL(vUrl); vUrl = null; }
+  $('vImg').removeAttribute('src');
+  render();
+}
+const vMove = d => { const n = vAt + d; if (n >= 0 && n < vItems.length) { vAt = n; showViewer(); } };
+$('vClose').addEventListener('click', closeViewer);
+$('vPrev').addEventListener('click', () => vMove(-1));
+$('vNext').addEventListener('click', () => vMove(1));
+$('vSel').addEventListener('click', () => { const p = vItems[vAt]; p.sel = !isSel(p); showViewer(); });
+let tx = null, ty = null;
+$('vStage').addEventListener('touchstart', e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
+$('vStage').addEventListener('touchend', e => {
+  if (tx === null) return;
+  const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) vMove(dx < 0 ? 1 : -1);
+  tx = null;
+});
+document.addEventListener('keydown', e => {
+  if ($('viewer').hidden) return;
+  if (e.key === 'Escape') closeViewer();
+  else if (e.key === 'ArrowRight') vMove(1);
+  else if (e.key === 'ArrowLeft') vMove(-1);
+});
 
 function saveFiles(files) {
   files.forEach((f, i) => setTimeout(() => {
@@ -584,27 +754,27 @@ function sampleThumb(n, me, sky) {
     kids += `<g transform="translate(${cx},118)"><path d="M-30 52q0-40 30-40t30 40z" fill="#fff" stroke="#c9cfc8"/><circle cy="-6" r="24" fill="${mine ? '#e5b98f' : '#f1d3b3'}"/><path d="M-27-12a27 24 0 0 1 54 0v4h-54z" fill="#1f4f8a"/></g>`;
     if (mine) box = [(cx - 32) / 240, 76 / 180, 64 / 240, 64 / 180];
   }
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180"><rect width="240" height="180" fill="${sky}"/><path d="M0 130q120-26 240 0v50H0z" fill="#6aaa7b"/><path d="M70 180q50-30 100 0z" fill="#cfae7e"/>${kids}<text x="8" y="20" font-size="13" fill="#6b756e" font-family="sans-serif">サンプル</text></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="360" viewBox="0 0 240 180"><rect width="240" height="180" fill="${sky}"/><path d="M0 130q120-26 240 0v50H0z" fill="#6aaa7b"/><path d="M70 180q50-30 100 0z" fill="#cfae7e"/>${kids}<text x="8" y="20" font-size="13" fill="#6b756e" font-family="sans-serif">サンプル</text></svg>`;
   return { thumb: 'data:image/svg+xml,' + encodeURIComponent(svg), box };
 }
-const SAMPLE = [[3, 1, .91], [1, 0, .88], [4, 2, .79], [2, 0, .66], [3, -1, .41], [2, -1, .37], [5, -1, .33], [1, -1, .24]];
+const SAMPLE = [[3, 1, .91], [1, 0, .88], [4, 2, .79], [2, 0, .66], [3, 1, .49], [2, -1, .37], [5, -1, .33], [0, -1, 0]];
 let sampleMode = false, saved = null;
 function enterSample() {
   if (sampleMode) return;
-  saved = { photos, hidden: $('result').hidden, thr: $('thr').value, only: $('onlyHit').checked };
+  saved = { photos, hidden: $('result').hidden, thr: $('thr').value, tab };
   sampleMode = true;
   photos = SAMPLE.map(([n, me, best], i) => {
     const s = sampleThumb(n, me, i % 2 ? '#dfe9e2' : '#e3ebf2');
-    return { file: { name: 'サンプル写真' }, thumb: s.thumb, best, box: s.box, sel: null };
+    return { file: { name: 'サンプル写真' }, thumb: s.thumb, best, box: me >= 0 ? s.box : null, sel: null, state: n ? 'ok' : 'noface' };
   });
-  $('thr').value = 55; $('onlyHit').checked = true;
+  $('thr').value = 55; tab = 'hit';
   $('result').hidden = false;
   render();
 }
 function leaveSample() {
   if (!sampleMode) return;
   sampleMode = false;
-  photos = saved.photos; $('thr').value = saved.thr; $('onlyHit').checked = saved.only;
+  photos = saved.photos; $('thr').value = saved.thr; tab = saved.tab;
   $('result').hidden = saved.hidden;
   render();
 }
@@ -613,11 +783,12 @@ const STEPS = [
   { t: 'ShotFind へようこそ', x: 'チームの試合写真から、わが子が写っている写真だけをAIで探します。サンプルの絵を使って、1分で流れを案内します。' },
   { el: 'refPick', t: '① わが子の顔写真を登録', x: 'まず、わが子の顔写真を3〜10枚選びます。正面の顔に加えて、帽子をかぶった写真や角度の違う写真があると見つけやすくなります。' },
   { el: 'drop', t: '② 試合写真を選ぶ', x: 'LINEアルバムの写真は、先にLINEでダウンロードしてスマホに保存しておきます。iPhoneは、写真を選ぶ画面で指でなぞるとまとめて選べます。' },
-  { el: 'run', t: '③ うちの子をさがす', x: 'このボタンを押すと、AIが1枚ずつ顔を照合します。照合はスマホの中だけで行い、写真はどこにも送りません。' },
-  { el: 'grid', sample: true, t: '④ 結果を見る', x: '見つかった写真は似ている順に並び、わが子の顔に緑の枠がつきます。右下の数字が「似ている度」です（ここに出ているのはサンプルの絵です）。' },
-  { el: 'thrBox', sample: true, t: '⑤ 似ている度で調整', x: 'ほかの子が混ざるときは数字を上げ、見落としが多いときは下げます。写真を調べ直さないので、すぐに切り替わります。' },
-  { el: 'grid', sample: true, first: true, t: '⑥ 送る写真を選ぶ', x: '写真をタップすると、選ぶ・外すを切り替えられます。右上に ✓ がついている写真が送る写真です。' },
-  { el: 'share', sample: true, t: '⑦ LINEで送る', x: 'このボタンを押すと共有メニューが開きます。LINEを選べば、選んだ写真をそのまま家族や祖父母に送れます。' },
+  { el: 'run', t: '③ うちの子をさがす', x: 'このボタンを押すと、AIが1枚ずつ顔を照合します。照合はこの端末の中で行い、写真を外部のサーバーには送りません。' },
+  { el: 'grid', sample: true, t: '④ 結果を見る', x: '見つかった写真は一致度の高い順に並び、わが子の顔に緑の枠がつきます。左下の数字が「一致度」です（ここに出ているのはサンプルの絵です）。' },
+  { el: 'thrBox', sample: true, t: '⑤ 一致度で調整', x: '数字が高いほど、選んだ顔写真に似ています（正解の確率ではありません）。ほかの子が混ざるときは上げ、見落としが多いときは下げます。写真を調べ直さないので、すぐに切り替わります。' },
+  { el: 'tabs', sample: true, t: '⑥ 見落としを確かめる', x: '「確認をおすすめ」には一致度がしきい値に近い写真、「顔を検出できなかった写真」には後ろ姿や帽子で顔が隠れた写真が入ります。結果にないから写っていない、とは限りません。' },
+  { el: 'grid', sample: true, first: true, t: '⑦ 確かめて選ぶ', x: '写真をタップすると大きく表示し、左右にスワイプして次の写真へ進めます。右上の丸で選ぶ・外すを切り替えます。✓ がついた写真が送る写真です。' },
+  { el: 'share', sample: true, t: '⑧ LINEで送る', x: 'このボタンを押すと共有メニューが開きます。LINEを選べば、選んだ写真をそのまま家族や祖父母に送れます。' },
   { t: '準備完了です', x: 'さっそく、わが子の顔写真から登録してみましょう。困ったときは「使い方・Q&A」も見てください。' }
 ];
 $('thr').parentElement.id = 'thrBox';

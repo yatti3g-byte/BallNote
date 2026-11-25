@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ShotFind の使い方</title>
-<meta name="description" content="チームの試合写真から、わが子が写っている写真だけをAIで探す無料ツール ShotFind の使い方。登録なし、写真も顔データも端末の外に出ません。">
+<meta name="description" content="チームの試合写真から、わが子が写っている写真だけをAIで探す無料ツール ShotFind の使い方。登録なし。写真は外部のサーバーに送らず、端末の中で処理します。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ShotFind の使い方">
-<meta property="og:description" content="LINEアルバムの数百枚から、わが子の写真だけ。登録なし・無料・写真は端末の外に出ません。">
+<meta property="og:description" content="LINEアルバムの数百枚から、わが子の写真だけ。登録なし・無料・写真は端末の中で処理。">
 <meta property="og:url" content="https://yatti3g-byte.github.io/ShotFind/help.html">
 <meta property="og:image" content="https://yatti3g-byte.github.io/ShotFind/og.jpg">
 <meta property="og:image:width" content="1200">
@@ -104,9 +104,9 @@ footer{color:var(--muted);font-size:13px;text-align:center}
   <section class="card" aria-labelledby="h-steps">
     <h2 id="h-steps">3ステップで使えます</h2>
     <ol class="steps">
-      <li><span class="n">1</span><div><b>わが子の顔写真を登録</b><p>正面の顔写真を3〜10枚選びます。帽子あり・なし、角度違いがあると見つけやすくなります。顔が見つからなかった写真は灰色になるので、×で外してください。</p></div></li>
+      <li><span class="n">1</span><div><b>わが子の顔写真を選ぶ</b><p>照合に使う正面の顔写真を3〜10枚選びます。帽子あり・なし、角度違いがあると見つけやすくなります。顔を検出できなかった写真は灰色になるので、×で外してください。「この端末に顔の特徴を保存」をオンにすると、次回から選び直さずに使えます。</p></div></li>
       <li><span class="n">2</span><div><b>チームの試合写真を選ぶ</b><p>LINEアルバムの写真は、ShotFindから直接は開けません。先にLINEでアルバムを開き、右上のメニュー（︙）からダウンロードしてスマホに保存します。保存しても、ほかのメンバーには通知されません。そのあと「試合写真を選ぶ」で、保存した写真をまとめて選びます。</p></div></li>
-      <li><span class="n">3</span><div><b>「うちの子をさがす」を押して、送る</b><p>見つかった写真から順に、わが子の顔に緑の枠がついて並びます。写真をタップすると選ぶ・外すを切り替えられます。「選んだ写真を送る」を押すと共有メニューが開くので、LINEを選んで家族や祖父母に送れます。</p></div></li>
+      <li><span class="n">3</span><div><b>「うちの子をさがす」を押して、送る</b><p>見つかった写真から順に、わが子の顔に緑の枠がついて並びます。写真をタップすると大きく表示され、左右にスワイプして確かめられます。右上の丸で選ぶ・外すを切り替えます。「選んだ写真を送る」を押すと共有メニューが開くので、LINEを選んで家族や祖父母に送れます。</p></div></li>
     </ol>
   </section>
 
@@ -119,8 +119,10 @@ footer{color:var(--muted);font-size:13px;text-align:center}
       <li><b>パソコン：</b>フォルダや写真を、枠の中へドラッグしても読み込めます。</li>
       <li>何回かに分けて選ぶと、写真は追加されていきます。</li>
     </ul>
-    <h3>「似ている度」で調整する</h3>
-    <p>この数字より似ている写真を「うちの子」にします。ほかの子が混ざるときは上げ、見落としが多いときは下げてください。数字を変えても写真を調べ直さないので、すぐ切り替わります。</p>
+    <h3>「一致度（目安）」で調整する</h3>
+    <p>数字が高いほど、選んだ顔写真に似ています。正解の確率ではありません。この数字以上の写真が「見つかった写真」になります。ほかの子が混ざるときは上げ、見落としが多いときは下げてください。数字を変えても写真を調べ直さないので、すぐ切り替わります。</p>
+    <h3>見落としを確かめる</h3>
+    <p>結果は「見つかった写真」「確認をおすすめ」「顔を検出できなかった写真」に分かれます。「確認をおすすめ」は一致度がしきい値に近い写真、「顔を検出できなかった写真」は後ろ姿や帽子で顔が隠れた写真などです。見つかった写真にないからといって、写っていないとは限りません。</p>
     <h3>小さく写った顔を探す</h3>
     <p>外野の守備や集合写真など、顔が小さい写真を見落とすときだけオンにしてください。写真を細かく分けて探すので、時間は約5倍かかります。</p>
     <h3>途中で止めても大丈夫</h3>
@@ -130,11 +132,11 @@ footer{color:var(--muted);font-size:13px;text-align:center}
   <section class="card" aria-labelledby="h-promise">
     <h2 id="h-promise">ShotFind の約束</h2>
     <div class="promise">
-      <div><b>写真は外に出ない</b><span>顔の照合はスマホやパソコンのブラウザの中だけで行います。写真も顔データも、どこにも送りません。</span></div>
+      <div><b>写真をサーバーに送らない</b><span>顔の照合はスマホやパソコンのブラウザの中で行います。写真が外に出るのは、自分で共有したときだけです。</span></div>
       <div><b>登録なし</b><span>アカウントもメールアドレスもいりません。開いてすぐ使えます。</span></div>
       <div><b>無料</b><span>広告もありません。</span></div>
     </div>
-    <p style="margin-top:12px;font-size:14px;color:var(--muted)">最初に開いたときだけ、顔を照合するAIのモデル（数MB）を読み込みます。照合にはオープンソースの Human ライブラリを使っています。</p>
+    <p style="margin-top:12px;font-size:14px;color:var(--muted)">最初に開いたとき、顔を照合するAIのプログラムとモデル（数MB）をインターネットから読み込みます。写真は送りません。照合にはオープンソースの Human ライブラリを使っています。顔の特徴を保存した場合も、保存先はこの端末のブラウザの中だけで、「保存した顔を消す」でいつでも消せます。</p>
   </section>
 
   <p class="note">チームの写真には、ほかのお子さんも写っています。共有するときは、チームのルールに合わせてください。SNSへの投稿は、写っているお子さんの保護者の了解があるときだけにしましょう。</p>
@@ -142,8 +144,8 @@ footer{color:var(--muted);font-size:13px;text-align:center}
   <section class="card" aria-labelledby="h-faq">
     <h2 id="h-faq">よくある質問</h2>
     <details><summary>アプリのインストールは必要ですか？</summary><p>いりません。ブラウザで開くだけで使えます。よく使う場合は、ブラウザのメニューから「ホーム画面に追加」しておくと、アプリのように開けます。</p></details>
-    <details><summary>どんな写真だと見落としやすいですか？</summary><p>帽子やヘルメットで顔が隠れた写真、横顔や後ろ姿、遠くて顔が小さい写真です。顔写真を帽子をかぶった状態でも何枚か登録すると改善します。背番号での照合は今後追加する予定です。</p></details>
-    <details><summary>きょうだいを両方さがせますか？</summary><p>今は1人ずつです。もう1人をさがすときは、顔写真をクリアして登録し直してください。調べた写真は覚えているので、2人目は速く終わります。</p></details>
+    <details><summary>どんな写真だと見落としやすいですか？</summary><p>帽子やヘルメットで顔が隠れた写真、横顔や後ろ姿、遠くて顔が小さい写真です。帽子をかぶった顔写真も何枚か選んでおくと改善します。迷った写真は「確認をおすすめ」と「顔を検出できなかった写真」も見てください。背番号での照合は今後追加する予定です。</p></details>
+    <details><summary>きょうだいを両方さがせますか？</summary><p>今は1人ずつです。もう1人をさがすときは、顔写真を×で外して選び直してください。調べた写真は覚えているので、2人目は速く終わります。</p></details>
     <details><summary>時間がかかります</summary><p>写真1枚ずつ、写っている全員の顔を照合しているためです。「小さく写った顔も探す」はオフにして、見つかった写真から先に選んでください。新しめのスマホやパソコンのほうが速く終わります。</p></details>
     <details><summary>写真が読み込めません</summary><p>iPhoneの写真形式（HEIC）は、Safari以外のブラウザだと読めないことがあります。iPhoneではSafariで開いてください。AIのモデルが読み込めないときは、通信の状態を確認してページを再読み込みしてください。</p></details>
     <details><summary>送った写真の画質は落ちますか？</summary><p>一覧には小さく縮めた画像を出していますが、送るときと保存するときは元の写真をそのまま使います。</p></details>
