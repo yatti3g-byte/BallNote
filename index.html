@@ -129,9 +129,12 @@ footer{color:var(--muted);font-size:13px}
       <button class="btn sub" id="clearPool" type="button" hidden>選んだ写真をクリア</button>
     </div>
     <div class="row">
-      <label class="chk"><input type="checkbox" id="fine" checked>小さく写った顔も探す（時間は約5倍）</label>
+      <label class="chk"><input type="checkbox" id="fine">小さく写った顔も探す（時間は約5倍。見落としが多いときだけ）</label>
     </div>
-    <div class="row"><button class="btn" id="run" disabled>うちの子をさがす</button></div>
+    <div class="row">
+      <button class="btn" id="run" disabled>うちの子をさがす</button>
+      <button class="btn sub" id="stop" type="button" hidden>ここで止める</button>
+    </div>
     <div class="bar" id="bar"><i></i></div>
     <p class="status" id="status" role="status" aria-live="polite"></p>
   </section>
@@ -170,7 +173,7 @@ const config = {
   filter: { enabled: false },
   face: {
     enabled: true,
-    detector: { rotation: true, maxDetected: 30, minConfidence: 0.3, return: false },
+    detector: { rotation: true, maxDetected: 20, minConfidence: 0.4, return: false },
     mesh: { enabled: true }, iris: { enabled: false }, description: { enabled: true },
     emotion: { enabled: false }, antispoof: { enabled: false }, liveness: { enabled: false }, attention: { enabled: false }
   },
@@ -347,42 +350,82 @@ drop.addEventListener('drop', async e => {
 // iPhone / iPad はフォルダ選択に対応していないので隠す
 if (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) $('dirPick').hidden = true;
 
+// 1枚ごとの顔データを覚えておく。顔写真を足したり似ている度を変えても、写真を調べ直さない。
+const faceCache = new Map(); // key -> {faces:[{emb, box(0〜1)}], thumb}
+let stopReq = false;
+const keyOf = (f, fine) => f.name + ':' + f.size + ':' + f.lastModified + (fine ? ':fine' : '');
+
+function makeThumb(c) {
+  const s = Math.min(1, 360 / Math.max(c.width, c.height));
+  const t = document.createElement('canvas');
+  t.width = Math.round(c.width * s); t.height = Math.round(c.height * s);
+  t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
+  return new Promise(res => t.toBlob(b => res(b ? URL.createObjectURL(b) : t.toDataURL('image/jpeg', 0.8)), 'image/jpeg', 0.8));
+}
+
+$('stop').addEventListener('click', () => { stopReq = true; status('止めています…'); });
+
 $('run').addEventListener('click', async () => {
   if (busy) return;
-  busy = true; updateRun();
-  photos.forEach(p => URL.revokeObjectURL(p.url));
+  busy = true; stopReq = false; updateRun();
+  $('stop').hidden = false;
   photos = [];
   const fine = $('fine').checked;
+  const max = fine ? 2000 : 1024;
   const refEmb = refs.filter(r => r.ok).map(r => r.emb);
   const t0 = performance.now();
+  let fresh = 0;
+  // 次の写真の読み込みを、今の写真のAI処理と並行して進める
+  let pending = null, pendingIdx = -1;
+  const startLoad = j => {
+    while (j < pool.length && faceCache.has(keyOf(pool[j], fine))) j++;
+    pendingIdx = j < pool.length ? j : -1;
+    pending = pendingIdx >= 0 ? loadCanvas(pool[j], max).catch(() => null) : null;
+  };
   try {
     await getHuman();
+    $('result').hidden = false;
+    startLoad(0);
     for (let i = 0; i < pool.length; i++) {
-      status(`さがしています… ${i + 1}/${pool.length}枚`);
-      progress(i, pool.length);
-      let best = 0, box = null;
-      try {
-        const c = await loadCanvas(pool[i], fine ? 2000 : 1280);
-        const faces = fine ? await detectTiled(c) : await detectFaces(c);
-        for (const f of faces) {
-          for (const r of refEmb) {
-            const s = human.match.similarity(r, f.emb);
-            if (s > best) { best = s; box = [f.box[0] / c.width, f.box[1] / c.height, f.box[2] / c.width, f.box[3] / c.height]; }
-          }
+      if (stopReq) break;
+      const file = pool[i], k = keyOf(file, fine);
+      let entry = faceCache.get(k);
+      if (!entry) {
+        const c = pendingIdx === i ? await pending : await loadCanvas(file, max).catch(() => null);
+        startLoad(i + 1);
+        entry = { faces: [], thumb: null };
+        if (c) {
+          try {
+            const found = fine ? await detectTiled(c) : await detectFaces(c);
+            entry.faces = found.map(f => ({ emb: f.emb, box: [f.box[0] / c.width, f.box[1] / c.height, f.box[2] / c.width, f.box[3] / c.height] }));
+          } catch (err) { /* AIで読めない写真は0点 */ }
+          entry.thumb = await makeThumb(c);
+        } else {
+          entry.thumb = URL.createObjectURL(file); // 読めない形式（HEICなど）
         }
-      } catch (err) { /* 読めない写真（HEICなど）は0点で残す */ }
-      photos.push({ file: pool[i], url: URL.createObjectURL(pool[i]), best, box, sel: null });
+        faceCache.set(k, entry);
+        fresh++;
+      }
+      let best = 0, box = null;
+      for (const f of entry.faces) for (const r of refEmb) {
+        const s = human.match.similarity(r, f.emb);
+        if (s > best) { best = s; box = f.box; }
+      }
+      photos.push({ file, thumb: entry.thumb, best, box, sel: null });
+      const done = i + 1, el = (performance.now() - t0) / 1000;
+      const left = fresh ? Math.round(el / done * (pool.length - done)) : 0;
+      status(`さがしています… ${done}/${pool.length}枚` + (left > 5 ? `（残り約${left >= 60 ? Math.round(left / 60) + '分' : left + '秒'}）` : ''));
+      progress(done, pool.length);
+      if (done % 8 === 0 || done === pool.length) render();
       await yieldUI();
     }
     progress(0, 0);
-    const sec = Math.round((performance.now() - t0) / 1000);
-    status(`${pool.length}枚を${sec}秒で調べました。`);
-    photos.sort((a, b) => b.best - a.best);
-    $('result').hidden = false;
     render();
-    $('result').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    const sec = Math.round((performance.now() - t0) / 1000);
+    status(stopReq ? `${photos.length}枚で止めました（${sec}秒）。続きは、もう一度「さがす」を押すと途中から速く進みます。`
+                   : `${pool.length}枚を${sec}秒で調べました。` + (fresh < pool.length ? `（${pool.length - fresh}枚は前回の結果を使いました）` : ''));
   } catch (err) { progress(0, 0); status('エラー：' + err.message); }
-  busy = false; updateRun();
+  busy = false; $('stop').hidden = true; updateRun();
 });
 
 const thr = () => Number($('thr').value) / 100;
@@ -400,7 +443,7 @@ function render() {
   $('sum').append(sm);
   const grid = $('grid');
   grid.replaceChildren();
-  const list = photos.filter(p => !only || p.best >= t || p.sel === true);
+  const list = photos.filter(p => !only || p.best >= t || p.sel === true).sort((a, b) => b.best - a.best);
   if (!list.length) {
     const e = document.createElement('p');
     e.className = 'empty';
@@ -414,7 +457,7 @@ function render() {
     d.setAttribute('role', 'checkbox');
     d.setAttribute('aria-checked', String(isSel(p)));
     const img = document.createElement('img');
-    img.src = p.url; img.alt = p.file.name; img.loading = 'lazy';
+    img.src = p.thumb; img.alt = p.file.name; img.loading = 'lazy';
     d.append(img);
     if (p.box && p.best >= t) {
       const b = document.createElement('div');
