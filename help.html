@@ -21,9 +21,9 @@
    PICTURE: 9枚のシートで、わが子の写真だけに枠がつく図。
    COLOUR and TYPE: オフホワイト、白いカード、グラウンドの緑。日本語ゴシック。
    LAYOUT: 1カラム。見出し→図→3ステップ→コツ→約束→よくある質問。 */
-:root{--paper:#f6f5f0;--surface:#fff;--ink:#1f2a22;--muted:#6b756e;--line:#d9d8d0;--accent:#2f7d4f;--accent2:#e8f3ec;--sky:#dfe9e2;--warn:#fff4d6;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--paper:#141a16;--surface:#1e2721;--ink:#e8ede9;--muted:#98a49b;--line:#33423a;--accent:#58b87e;--accent2:#25382c;--sky:#26332b;--warn:#3a3418;color-scheme:dark}}
-:root[data-theme=dark]{--paper:#141a16;--surface:#1e2721;--ink:#e8ede9;--muted:#98a49b;--line:#33423a;--accent:#58b87e;--accent2:#25382c;--sky:#26332b;--warn:#3a3418;color-scheme:dark}
+:root{--paper:#f6f5f0;--surface:#fff;--ink:#1f2a22;--muted:#6b756e;--line:#d9d8d0;--accent:#2f7d4f;--accent-ink:#fff;--accent2:#e8f3ec;--sky:#dfe9e2;--warn:#fff4d6;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--paper:#141a16;--surface:#1e2721;--ink:#e8ede9;--muted:#98a49b;--line:#33423a;--accent:#58b87e;--accent-ink:#14201c;--accent2:#25382c;--sky:#26332b;--warn:#3a3418;color-scheme:dark}}
+:root[data-theme=dark]{--paper:#141a16;--surface:#1e2721;--ink:#e8ede9;--muted:#98a49b;--line:#33423a;--accent:#58b87e;--accent-ink:#14201c;--accent2:#25382c;--sky:#26332b;--warn:#3a3418;color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
 html,body{margin:0}
 body{background:var(--paper);color:var(--ink);font:16px/1.7 "Hiragino Sans","Noto Sans JP",system-ui,sans-serif;-webkit-text-size-adjust:100%;overflow-x:clip}
@@ -36,11 +36,11 @@ p{margin:0 0 10px}
 .lead{color:var(--muted);font-size:17px;margin:0}
 .brand{color:var(--muted);font-size:14px;margin:0}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px}
-.cta{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 24px;border-radius:12px;background:var(--accent);color:#fff;font-weight:800;text-decoration:none;font-size:17px}
+.cta{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 24px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-weight:800;text-decoration:none;font-size:17px}
 .sheet{width:100%;height:auto;display:block;border-radius:12px}
 .steps{list-style:none;margin:0;padding:0;display:grid;gap:12px}
 .steps li{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:start}
-.n{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;font-weight:800}
+.n{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:800}
 .steps b{display:block;font-size:17px;margin-top:4px}
 .steps p{margin:2px 0 0;color:var(--ink)}
 .tips{margin:0;padding-left:1.3em}
@@ -54,12 +54,17 @@ details{border-top:1px solid var(--line);padding:10px 0}
 details:last-child{border-bottom:1px solid var(--line)}
 summary{cursor:pointer;font-weight:700;min-height:32px}
 details p{margin:6px 0 0}
-.family{display:flex;flex-wrap:wrap;gap:10px}
-.family a{flex:1 1 200px;display:block;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;color:var(--ink);text-decoration:none}
-.family a b{color:var(--accent)}
-.family a span{display:block;font-size:14px;color:var(--muted)}
 footer{color:var(--muted);font-size:13px;text-align:center}
 [hidden]{display:none!important}
+.series h2{font-size:20px;margin:0 0 4px}
+.series-lead{color:var(--muted);font-size:14px;margin:0 0 10px}
+.family{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.family a{display:block;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;color:var(--ink);text-decoration:none}
+.family a b{color:var(--accent)}
+.family a span{display:block;font-size:14px;color:var(--muted)}
+.family a.here{background:var(--accent2);border-color:var(--accent)}
+.foot{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;font-size:13px;color:var(--muted);margin:0}
+.foot a{color:var(--accent)}
 .bmc{display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:0 22px;border-radius:12px;background:#ffdd00;color:#1f1f1f;font-weight:800;text-decoration:none}
 @media (prefers-reduced-motion:no-preference){.hit{animation:pop 1.6s ease-out .4s both}@keyframes pop{0%{opacity:0;transform:scale(1.15)}60%{opacity:1}100%{transform:scale(1)}}}
 </style>
@@ -67,7 +72,7 @@ footer{color:var(--muted);font-size:13px;text-align:center}
 <body>
 <main>
   <header>
-    <p class="brand">TapScore・FormNote の仲間</p>
+    <p class="brand">DugoutTools シリーズ</p>
     <h1>ShotFind の使い方</h1>
     <p class="lead">LINEアルバムの何百枚から、わが子が写っている写真だけ。AIで顔を照合して、見つけた写真をそのままLINEで送れます。</p>
   </header>
@@ -152,23 +157,29 @@ footer{color:var(--muted);font-size:13px;text-align:center}
   </section>
 
   <section class="card" id="support" aria-labelledby="h-sup">
-    <h2 id="h-sup">ShotFind を応援する</h2>
-    <p>ShotFind は無料・広告なしで、少年野球の親が個人で作っています。役に立ったら、コーヒー1杯分の応援をいただけると続ける力になります。</p>
+    <h2 id="h-sup">DugoutTools を応援する</h2>
+    <p>ShotFind をはじめとする DugoutTools のアプリは、無料・広告なしで、少年野球の親が個人で作っています。役に立ったら、コーヒー1杯分の応援をいただけると続ける力になります。</p>
     <a class="bmc" id="bmcLink" href="#" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 8h13v5a6 6 0 0 1-6 6H10a6 6 0 0 1-6-6zM17 9h1.5a2.5 2.5 0 0 1 0 5H17" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 3c0 1.5 1 1.5 1 3M12 3c0 1.5 1 1.5 1 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       Buy Me a Coffee で応援する
     </a>
   </section>
 
-  <section aria-labelledby="h-family">
-    <h2 id="h-family">同じシリーズのツール</h2>
+  <section class="series" aria-labelledby="h-series">
+    <h2 id="h-series">DugoutTools のアプリ</h2>
+    <p class="series-lead">少年野球・中学野球の親のための無料ツール。どれも登録なし、データは端末の中で処理します。</p>
     <div class="family">
-      <a href="https://yatti3g-byte.github.io/TapScore/"><b>TapScore</b><span>1球ずつタップで記録する少年野球のスコアブック</span></a>
+      <a href="https://yatti3g-byte.github.io/TapScore/"><b>TapScore</b><span>1球ずつタップで記録するスコアブック</span></a>
+      <a href="https://yatti3g-byte.github.io/PitchCount/"><b>PitchCount</b><span>球数制限に合わせた球数カウンター</span></a>
       <a href="https://yatti3g-byte.github.io/form-note/"><b>FormNote</b><span>コマ送りと角度の測定でフォームを確認</span></a>
+      <a class="here" href="./"><b>ShotFind</b><span>LINEアルバムから、わが子の写真をAIで探す</span></a>
     </div>
   </section>
 
-  <footer><p>ShotFind ・ 試作版</p></footer>
+  <footer>
+    <p>データの扱い：写真と顔の特徴データは外部のサーバーに送らず、端末の中で処理します。</p>
+    <p class="foot"><span>ShotFind 0.1（試作版）</span><a href="./">ShotFind を開く</a><a href="#h-series">DugoutTools のアプリ</a><a href="https://buymeacoffee.com/formnote" target="_blank" rel="noopener">DugoutTools を応援する</a></p>
+  </footer>
 </main>
 <script>
 {

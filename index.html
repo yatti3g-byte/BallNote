@@ -20,17 +20,17 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%9A%BE%3C/text%3E%3C/svg%3E">
 <style>
 /* VOICE: 試合後のベンチ横で親が使う、落ち着いた道具。TapScore / FormNote と同じ家族。
-   NAME: ShotFind（ショットファインド）。TapScore・FormNote と同じブランド。
+   NAME: ShotFind（ショットファインド）。DugoutTools シリーズ（TapScore・PitchCount・FormNote）。
    IDEA: 写真のコンタクトシート。わが子の顔に緑の枠がつく。
    PICTURE: 結果のグリッドそのもの。
    COLOUR and TYPE: TapScoreと同じ温かいオフホワイト、白いカード、グラウンドの緑。システムの日本語ゴシック。
    LAYOUT: 1カラム、手順 1→2→結果。スマホ優先。 */
 :root{
-  --paper:#f6f5f0;--surface:#fff;--ink:#1f2a22;--muted:#6b756e;--line:#d9d8d0;--accent:#2f7d4f;--accent2:#e8f3ec;--warn:#fff4d6;--miss:#9aa39c;
+  --paper:#f6f5f0;--surface:#fff;--ink:#1f2a22;--muted:#6b756e;--line:#d9d8d0;--accent:#2f7d4f;--accent-ink:#fff;--accent2:#e8f3ec;--warn:#fff4d6;--miss:#9aa39c;
   color-scheme:light;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--paper:#141a16;--surface:#1e2721;--ink:#e8ede9;--muted:#98a49b;--line:#33423a;--accent:#58b87e;--accent2:#25382c;--warn:#3a3418;--miss:#5d6a61;color-scheme:dark}}
-:root[data-theme=dark]{--paper:#141a16;--surface:#1e2721;--ink:#e8ede9;--muted:#98a49b;--line:#33423a;--accent:#58b87e;--accent2:#25382c;--warn:#3a3418;--miss:#5d6a61;color-scheme:dark}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--paper:#141a16;--surface:#1e2721;--ink:#e8ede9;--muted:#98a49b;--line:#33423a;--accent:#58b87e;--accent-ink:#14201c;--accent2:#25382c;--warn:#3a3418;--miss:#5d6a61;color-scheme:dark}}
+:root[data-theme=dark]{--paper:#141a16;--surface:#1e2721;--ink:#e8ede9;--muted:#98a49b;--line:#33423a;--accent:#58b87e;--accent-ink:#14201c;--accent2:#25382c;--warn:#3a3418;--miss:#5d6a61;color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
 [hidden]{display:none!important}
 html,body{margin:0}
@@ -42,7 +42,7 @@ h1{font-size:30px;line-height:1.2;margin:8px 0 2px;letter-spacing:.02em}
 .lead{margin:0;color:var(--muted);font-size:14px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
 .card h2{font-size:18px;margin:0 0 4px;display:flex;gap:8px;align-items:center}
-.num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-size:14px;flex:none}
+.num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:14px;flex:none}
 .hint{margin:0 0 12px;color:var(--muted);font-size:14px}
 .pick{display:flex;align-items:center;justify-content:center;min-height:52px;border:2px dashed var(--line);border-radius:10px;cursor:pointer;font-weight:700;color:var(--accent);background:var(--accent2)}
 .pick input{position:absolute;opacity:0;width:1px;height:1px}
@@ -51,7 +51,7 @@ h1{font-size:30px;line-height:1.2;margin:8px 0 2px;letter-spacing:.02em}
 .ref img,.ref .ph{width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);display:block;background:var(--paper)}
 .ref.bad img{border-color:var(--miss);filter:grayscale(1)}
 .ref button{position:absolute;top:-4px;right:-4px;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--surface);cursor:pointer;line-height:1}
-.btn{min-height:48px;padding:0 18px;border-radius:10px;border:0;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+.btn{min-height:48px;padding:0 18px;border-radius:10px;border:0;background:var(--accent);color:var(--accent-ink);font-weight:700;cursor:pointer}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
 .btn.sub{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
@@ -81,10 +81,19 @@ label.chk input{width:20px;height:20px;accent-color:var(--accent)}
 .box{position:absolute;border:2px solid #fff;box-shadow:0 0 0 2px var(--accent);border-radius:4px;pointer-events:none}
 .badge{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.68);color:#fff;font-size:12px;padding:2px 7px;border-radius:10px;font-variant-numeric:tabular-nums}
 .tick{position:absolute;right:6px;top:6px;width:28px;height:28px;border-radius:50%;background:var(--surface);border:2px solid var(--line);display:grid;place-items:center;font-weight:900;color:transparent}
-.ph-card.sel .tick{background:var(--accent);border-color:#fff;color:#fff}
+.ph-card.sel .tick{background:var(--accent);border-color:var(--accent-ink);color:var(--accent-ink)}
 .empty{color:var(--muted);font-size:14px;text-align:center;padding:24px 0}
 footer{color:var(--muted);font-size:13px}
 footer a{color:var(--accent)}
+.series h2{font-size:20px;margin:0 0 4px}
+.series-lead{color:var(--muted);font-size:14px;margin:0 0 10px}
+.family{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.family a{display:block;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;color:var(--ink);text-decoration:none}
+.family a b{color:var(--accent)}
+.family a span{display:block;font-size:14px;color:var(--muted)}
+.family a.here{background:var(--accent2);border-color:var(--accent)}
+.foot{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;font-size:13px;color:var(--muted);margin:0}
+.foot a{color:var(--accent)}
 .toplinks{margin-top:10px}
 .toplinks .btn{min-height:44px;font-size:15px;display:inline-flex;align-items:center;text-decoration:none}
 .welcome{background:var(--accent2);border:1px solid var(--accent);border-radius:12px;padding:14px 16px}
@@ -111,13 +120,15 @@ footer a{color:var(--accent)}
 .v-btn{min-height:44px;padding:0 14px;white-space:nowrap;border-radius:10px;border:1px solid #3a463e;background:#1b231e;color:#fff;cursor:pointer;font-weight:700}
 .v-btn[disabled]{opacity:.35}
 .tour{position:fixed;inset:0;z-index:50}
-.tour-spot{position:fixed;border-radius:12px;box-shadow:0 0 0 9999px rgba(10,16,12,.62);pointer-events:none;transition:all .25s}
-.tour-spot.none{left:50%;top:40%;width:0;height:0}
-.tour-bub{position:fixed;left:16px;right:16px;max-width:420px;margin:0 auto;background:var(--surface);color:var(--ink);border-radius:14px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
-.tour-step{margin:0;font-size:13px;color:var(--muted)}
-.tour-title{margin:2px 0 6px;font-size:18px;font-weight:800}
-.tour-text{margin:0 0 12px;font-size:15px}
-.tour-x{margin-left:auto;background:none;border:0;color:var(--muted);min-height:44px;padding:0 8px;cursor:pointer;text-decoration:underline}
+.tour-spot{position:fixed;border-radius:14px;box-shadow:0 0 0 9999px rgba(20,28,22,.62);outline:3px solid #fff;pointer-events:none;transition:all .2s ease}
+.tour-spot.none{left:50%;top:40%;width:0;height:0;outline:0}
+.tour-bub{position:fixed;left:12px;right:12px;max-width:520px;margin:0 auto;background:#2f7d4f;color:#fff;border-radius:16px;padding:14px 16px 12px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.tour-step{float:right;margin:0;font-size:13px;font-weight:700;opacity:.8}
+.tour-title{margin:0 0 4px;font-size:17px;font-weight:800}
+.tour-text{margin:0 0 10px;font-size:15px;line-height:1.65}
+.tour-bub .btn{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.7);min-height:44px;padding:8px 16px}
+.tour-bub .btn.primary{background:#fff;color:#2f7d4f;border-color:#fff}
+.tour-x{margin-right:auto;order:-1;background:none;border:0;color:#fff;opacity:.85;min-height:44px;padding:0 4px;cursor:pointer;text-decoration:underline}
 @media (prefers-reduced-motion:reduce){.tour-spot{transition:none}}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
 @media (max-width:420px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}h1{font-size:26px}}
@@ -217,17 +228,28 @@ footer a{color:var(--accent)}
   </section>
 
   <section class="card support" id="support" aria-labelledby="h-sup">
-    <h2 id="h-sup">ShotFind を応援する</h2>
-    <p class="hint">ShotFind は無料・広告なしで、少年野球の親が個人で作っています。役に立ったら、コーヒー1杯分の応援をいただけると続ける力になります。</p>
+    <h2 id="h-sup">DugoutTools を応援する</h2>
+    <p class="hint">ShotFind をはじめとする DugoutTools のアプリは、無料・広告なしで、少年野球の親が個人で作っています。役に立ったら、コーヒー1杯分の応援をいただけると続ける力になります。</p>
     <a class="bmc" id="bmcLink" href="#" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 8h13v5a6 6 0 0 1-6 6H10a6 6 0 0 1-6-6zM17 9h1.5a2.5 2.5 0 0 1 0 5H17" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 3c0 1.5 1 1.5 1 3M12 3c0 1.5 1 1.5 1 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       Buy Me a Coffee で応援する
     </a>
   </section>
 
+  <section class="series" aria-labelledby="h-series">
+    <h2 id="h-series">DugoutTools のアプリ</h2>
+    <p class="series-lead">少年野球・中学野球の親のための無料ツール。どれも登録なし、データは端末の中で処理します。</p>
+    <div class="family">
+      <a href="https://yatti3g-byte.github.io/TapScore/"><b>TapScore</b><span>1球ずつタップで記録するスコアブック</span></a>
+      <a href="https://yatti3g-byte.github.io/PitchCount/"><b>PitchCount</b><span>球数制限に合わせた球数カウンター</span></a>
+      <a href="https://yatti3g-byte.github.io/form-note/"><b>FormNote</b><span>コマ送りと角度の測定でフォームを確認</span></a>
+      <a class="here" aria-current="page"><b>ShotFind</b><span>LINEアルバムから、わが子の写真をAIで探す（このアプリ）</span></a>
+    </div>
+  </section>
+
   <footer>
-    <p>顔の照合には、ブラウザの中で動くオープンソースのAI（Human ライブラリ）を使っています。最初に開いたとき、AIのプログラムとモデル（数MB）をインターネットから読み込みますが、写真は送りません。写真が外に出るのは、自分で共有したときだけです。</p>
-    <p>同じシリーズ：<a href="https://yatti3g-byte.github.io/TapScore/">TapScore</a>・<a href="https://yatti3g-byte.github.io/form-note/">FormNote</a></p>
+    <p><b>データの扱い：</b>顔の照合は、ブラウザの中で動くオープンソースのAI（Human ライブラリ）で行います。最初に開いたとき、AIのプログラムとモデル（数MB）をインターネットから読み込みますが、写真は送りません。写真が外に出るのは、自分で共有したときだけです。</p>
+    <p class="foot"><span>ShotFind 0.1（試作版）</span><a href="help.html">使い方・Q&amp;A</a><a href="#h-series">DugoutTools のアプリ</a><a href="https://buymeacoffee.com/formnote" target="_blank" rel="noopener">DugoutTools を応援する</a></p>
   </footer>
 </main>
 
@@ -255,7 +277,7 @@ footer a{color:var(--accent)}
     <p class="tour-text" id="tourText"></p>
     <div class="row">
       <button class="btn sub" id="tourPrev" type="button">戻る</button>
-      <button class="btn" id="tourNext" type="button">次へ</button>
+      <button class="btn primary" id="tourNext" type="button">次へ</button>
       <button class="tour-x" id="tourEnd" type="button">終了</button>
     </div>
   </div>
