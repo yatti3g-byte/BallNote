@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ShotFind の使い方</title>
-<meta name="description" content="チームの試合写真から、わが子が写っている写真だけをAIで探す無料ツール ShotFind の使い方。登録なし。写真は外部のサーバーに送らず、端末の中で処理します。">
+<title>ShotFindの使い方</title>
+<meta name="description" content="チームの試合写真から、わが子が写っている写真だけをAIで探す無料ツールShotFindの使い方。登録なし。写真は外部のサーバーに送らず、端末の中で処理します。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="ShotFind の使い方">
+<meta property="og:title" content="ShotFindの使い方">
 <meta property="og:description" content="LINEアルバムの数百枚から、わが子の写真だけ。登録なし・無料・写真は端末の中で処理。">
 <meta property="og:url" content="https://yatti3g-byte.github.io/ShotFind/help.html">
 <meta property="og:image" content="https://yatti3g-byte.github.io/ShotFind/og.jpg">
@@ -14,7 +14,8 @@
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%9A%BE%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 /* VOICE: 試合後の親に向けた、短くて親切な説明書。TapScore / FormNote と同じブランド。
    IDEA: 写真のコンタクトシート。たくさんの中の1人に緑の枠。
@@ -56,6 +57,13 @@ summary{cursor:pointer;font-weight:700;min-height:32px}
 details p{margin:6px 0 0}
 footer{color:var(--muted);font-size:13px;text-align:center}
 [hidden]{display:none!important}
+.apphead{display:flex;align-items:center;gap:12px;margin:8px 0 6px}
+.apphead h1{margin:0}
+.apphead .series-tag{display:block;font-size:12px;color:var(--muted);font-weight:400;letter-spacing:0;line-height:1.3}
+.applogo{flex:none}.applogo .lb{fill:#cfe3d6}.applogo .lh{fill:#2f7d4f}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .applogo .lb{fill:#33423a}:root:not([data-theme=light]) .applogo .lh{fill:#58b87e}}
+:root[data-theme=dark] .applogo .lb{fill:#33423a}:root[data-theme=dark] .applogo .lh{fill:#58b87e}
+.series .family b.self{color:var(--ink)}
 .series h2{font-size:20px;margin:0 0 4px}
 .series-lead{color:var(--muted);font-size:14px;margin:0 0 10px}
 .family{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
@@ -63,6 +71,9 @@ footer{color:var(--muted);font-size:13px;text-align:center}
 .family a b{color:var(--accent)}
 .family a span{display:block;font-size:14px;color:var(--muted)}
 .family a.here{background:var(--accent2);border-color:var(--accent)}
+.foot3{margin:2px 0;text-align:center;font-size:13px;color:var(--muted)}.foot3 a{color:var(--accent)}.foot3 b{color:var(--ink)}
+.data h3{font-size:16px;margin:14px 0 4px}.data ul{margin:0;padding-left:1.3em}.data li{margin:4px 0}.data p{margin:0}
+.series-note{color:var(--muted);font-size:13px;margin:-4px 0 10px}
 .foot{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;font-size:13px;color:var(--muted);margin:0}
 .foot a{color:var(--accent)}
 .bmc{display:inline-flex;align-items:center;gap:10px;min-height:52px;padding:0 22px;border-radius:12px;background:#ffdd00;color:#1f1f1f;font-weight:800;text-decoration:none}
@@ -72,8 +83,7 @@ footer{color:var(--muted);font-size:13px;text-align:center}
 <body>
 <main>
   <header>
-    <p class="brand">DugoutTools シリーズ</p>
-    <h1>ShotFind の使い方</h1>
+    <div class="apphead"><svg class="applogo" width="40" height="40" viewBox="0 0 64 64" aria-hidden="true"><rect class="lb" x="25" y="7" width="14" height="14" rx="3" transform="rotate(45 32 14)"/><rect class="lb" x="7" y="25" width="14" height="14" rx="3" transform="rotate(45 14 32)"/><rect class="lb" x="43" y="25" width="14" height="14" rx="3" transform="rotate(45 50 32)"/><path class="lh" d="M24.5 44 H39.5 V51 L32 58 L24.5 51 Z"/></svg><h1>ShotFindの使い方<span class="series-tag">DugoutTools</span></h1></div>
     <p class="lead">LINEアルバムの何百枚から、わが子が写っている写真だけ。AIで顔を照合して、見つけた写真をそのままLINEで送れます。</p>
   </header>
 
@@ -103,8 +113,8 @@ footer{color:var(--muted);font-size:13px;text-align:center}
     </g>
   </svg>
 
-  <p><a class="cta" href="./">ShotFind を開く</a></p>
-  <p style="color:var(--muted);font-size:15px">はじめての方は、ShotFind を開いて「チュートリアル（1分）」を押すと、サンプルの絵で流れを体験できます。</p>
+  <p><a class="cta" href="./">ShotFindを開く</a></p>
+  <p style="color:var(--muted);font-size:15px">はじめての方は、ShotFindを開いて「チュートリアル（1分）」を押すと、サンプルの絵で流れを体験できます。</p>
 
   <section class="card" aria-labelledby="h-steps">
     <h2 id="h-steps">3ステップで使えます</h2>
@@ -135,13 +145,31 @@ footer{color:var(--muted);font-size:13px;text-align:center}
   </section>
 
   <section class="card" aria-labelledby="h-promise">
-    <h2 id="h-promise">ShotFind の約束</h2>
+    <h2 id="h-promise">ShotFindの約束</h2>
     <div class="promise">
       <div><b>写真をサーバーに送らない</b><span>顔の照合はスマホやパソコンのブラウザの中で行います。写真が外に出るのは、自分で共有したときだけです。</span></div>
       <div><b>登録なし</b><span>アカウントもメールアドレスもいりません。開いてすぐ使えます。</span></div>
       <div><b>無料</b><span>広告もありません。</span></div>
     </div>
-    <p style="margin-top:12px;font-size:14px;color:var(--muted)">最初に開いたとき、顔を照合するAIのプログラムとモデル（数MB）をインターネットから読み込みます。写真は送りません。照合にはオープンソースの Human ライブラリを使っています。顔の特徴データを保存した場合も、保存先はこの端末のブラウザの中だけです。期限はなく、「保存した顔を消す」を押すか、ブラウザの閲覧データ（サイトデータ）を消すと削除されます。</p>
+    <p style="margin-top:12px;font-size:14px;color:var(--muted)">顔の照合には、オープンソースのHumanライブラリを使っています。くわしくは下の「<a href="#data" style="color:var(--accent)">データの扱い</a>」を見てください。</p>
+  </section>
+
+<section class="card data" id="data" aria-labelledby="h-data">
+    <h2 id="h-data">データの扱い</h2>
+    <h3>どこで処理するか</h3>
+    <p>顔の照合は、すべてこの端末のブラウザの中で行います。写真はアップロードしません。</p>
+    <h3>この端末に保存するもの</h3>
+    <ul>
+      <li>写真と探した結果は保存しません。ページを閉じると消えます。</li>
+      <li>「この端末に顔の特徴を保存」をオンにしたときだけ、照合用の顔の特徴データと、確認用の小さな顔の画像を、このブラウザに保存します。</li>
+      <li>保存した顔は、「保存した顔を消す」を押すか、ブラウザの閲覧データ（サイトデータ）を消すと削除されます。</li>
+      <li>ほかに保存するのは、チュートリアルを見たかどうかだけです。</li>
+    </ul>
+    <h3>外と通信するとき</h3>
+    <ul>
+      <li>ページを開いたとき、顔を照合するAIのプログラムとモデル（数MB）を、公開の配信サービス（jsDelivr）から読み込みます。写真はこのとき送りません。</li>
+      <li>選んだ写真を共有したときは、自分が選んだ相手に写真が渡ります。</li>
+    </ul>
   </section>
 
   <p class="note">チームの写真には、ほかのお子さんも写っています。共有するときは、チームのルールに合わせてください。SNSへの投稿は、写っているお子さんの保護者の了解があるときだけにしましょう。</p>
@@ -157,28 +185,30 @@ footer{color:var(--muted);font-size:13px;text-align:center}
   </section>
 
   <section class="card" id="support" aria-labelledby="h-sup">
-    <h2 id="h-sup">DugoutTools を応援する</h2>
-    <p>ShotFind をはじめとする DugoutTools のアプリは、無料・広告なしで、少年野球の親が個人で作っています。役に立ったら、コーヒー1杯分の応援をいただけると続ける力になります。</p>
+    <h2 id="h-sup">DugoutToolsを応援する</h2>
+    <p>ShotFindをはじめとするDugoutToolsのアプリは、無料・広告なしで、少年野球の親が個人で作っています。役に立ったら、コーヒー1杯分の応援をいただけると続ける力になります。</p>
     <a class="bmc" id="bmcLink" href="#" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 8h13v5a6 6 0 0 1-6 6H10a6 6 0 0 1-6-6zM17 9h1.5a2.5 2.5 0 0 1 0 5H17" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 3c0 1.5 1 1.5 1 3M12 3c0 1.5 1 1.5 1 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      Buy Me a Coffee で応援する
+      Buy Me a Coffeeで応援する
     </a>
   </section>
 
   <section class="series" aria-labelledby="h-series">
-    <h2 id="h-series">DugoutTools のアプリ</h2>
-    <p class="series-lead">少年野球・中学野球の親のための無料ツール。どれも登録なし、データは端末の中で処理します。</p>
+    <h2 id="h-series">DugoutToolsのアプリ</h2>
+    <p class="series-lead">少年野球の現場で使える、無料・登録なしの道具</p>
+    <p class="series-note">記録や写真を、こちらのサーバーに送ることはありません。外に出るのは、自分で共有したり、AIアプリに渡したりしたときだけです。</p>
     <div class="family">
-      <a href="https://yatti3g-byte.github.io/TapScore/"><b>TapScore</b><span>1球ずつタップで記録するスコアブック</span></a>
+      <a href="https://yatti3g-byte.github.io/TapScore/"><b>TapScore</b><span>1球ずつタップして記録するスコアブック</span></a>
       <a href="https://yatti3g-byte.github.io/PitchCount/"><b>PitchCount</b><span>球数制限に合わせた球数カウンター</span></a>
-      <a href="https://yatti3g-byte.github.io/form-note/"><b>FormNote</b><span>コマ送りと角度の測定でフォームを確認</span></a>
-      <a class="here" href="./"><b>ShotFind</b><span>LINEアルバムから、わが子の写真をAIで探す</span></a>
+      <a href="https://yatti3g-byte.github.io/form-note/"><b>FormNote</b><span>コマ送りと角度の測定で、フォームを確認</span></a>
+      <a class="here" aria-current="page"><b>ShotFind</b><span>チームの試合写真から、わが子の写真を探す</span></a>
     </div>
   </section>
 
   <footer>
-    <p>データの扱い：写真と顔の特徴データは外部のサーバーに送らず、端末の中で処理します。</p>
-    <p class="foot"><span>ShotFind 0.1（試作版）</span><a href="./">ShotFind を開く</a><a href="#h-series">DugoutTools のアプリ</a><a href="https://buymeacoffee.com/formnote" target="_blank" rel="noopener">DugoutTools を応援する</a></p>
+    <p class="foot3"><span>ShotFind 0.1 · DugoutTools</span></p>
+    <p class="foot3">DugoutToolsのアプリ：<a href="https://yatti3g-byte.github.io/TapScore/">TapScore</a> ・ <a href="https://yatti3g-byte.github.io/PitchCount/">PitchCount</a> ・ <a href="https://yatti3g-byte.github.io/form-note/">FormNote</a> ・ <b>ShotFind</b></p>
+    <p class="foot3"><a href="https://buymeacoffee.com/formnote" target="_blank" rel="noopener">☕ DugoutToolsを応援する</a></p>
   </footer>
 </main>
 <script>

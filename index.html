@@ -17,10 +17,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#f6f5f0">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%E2%9A%BE%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 /* VOICE: 試合後のベンチ横で親が使う、落ち着いた道具。TapScore / FormNote と同じ家族。
-   NAME: ShotFind（ショットファインド）。DugoutTools シリーズ（TapScore・PitchCount・FormNote）。
+   NAME: ShotFind（ショットファインド）。DugoutToolsシリーズ（TapScore・PitchCount・FormNote）。
    IDEA: 写真のコンタクトシート。わが子の顔に緑の枠がつく。
    PICTURE: 結果のグリッドそのもの。
    COLOUR and TYPE: TapScoreと同じ温かいオフホワイト、白いカード、グラウンドの緑。システムの日本語ゴシック。
@@ -85,6 +86,13 @@ label.chk input{width:20px;height:20px;accent-color:var(--accent)}
 .empty{color:var(--muted);font-size:14px;text-align:center;padding:24px 0}
 footer{color:var(--muted);font-size:13px}
 footer a{color:var(--accent)}
+.apphead{display:flex;align-items:center;gap:12px;margin:8px 0 6px}
+.apphead h1{margin:0}
+.apphead .series-tag{display:block;font-size:12px;color:var(--muted);font-weight:400;letter-spacing:0;line-height:1.3}
+.applogo{flex:none}.applogo .lb{fill:#cfe3d6}.applogo .lh{fill:#2f7d4f}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .applogo .lb{fill:#33423a}:root:not([data-theme=light]) .applogo .lh{fill:#58b87e}}
+:root[data-theme=dark] .applogo .lb{fill:#33423a}:root[data-theme=dark] .applogo .lh{fill:#58b87e}
+.series .family b.self{color:var(--ink)}
 .series h2{font-size:20px;margin:0 0 4px}
 .series-lead{color:var(--muted);font-size:14px;margin:0 0 10px}
 .family{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
@@ -92,6 +100,9 @@ footer a{color:var(--accent)}
 .family a b{color:var(--accent)}
 .family a span{display:block;font-size:14px;color:var(--muted)}
 .family a.here{background:var(--accent2);border-color:var(--accent)}
+.foot3{margin:2px 0;text-align:center;font-size:13px;color:var(--muted)}.foot3 a{color:var(--accent)}.foot3 b{color:var(--ink)}
+.data h3{font-size:16px;margin:14px 0 4px}.data ul{margin:0;padding-left:1.3em}.data li{margin:4px 0}.data p{margin:0}
+.series-note{color:var(--muted);font-size:13px;margin:-4px 0 10px}
 .foot{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;font-size:13px;color:var(--muted);margin:0}
 .foot a{color:var(--accent)}
 .toplinks{margin-top:10px}
@@ -137,7 +148,7 @@ footer a{color:var(--accent)}
 <body>
 <main>
   <header>
-    <h1>ShotFind</h1>
+    <div class="apphead"><svg class="applogo" width="40" height="40" viewBox="0 0 64 64" aria-hidden="true"><rect class="lb" x="25" y="7" width="14" height="14" rx="3" transform="rotate(45 32 14)"/><rect class="lb" x="7" y="25" width="14" height="14" rx="3" transform="rotate(45 14 32)"/><rect class="lb" x="43" y="25" width="14" height="14" rx="3" transform="rotate(45 50 32)"/><path class="lh" d="M24.5 44 H39.5 V51 L32 58 L24.5 51 Z"/></svg><h1>ShotFind<span class="series-tag">DugoutTools</span></h1></div>
     <p class="lead">チームの試合写真から、わが子が写っている写真だけをAIで探します。登録なし・無料。写真と顔の特徴データは外部のサーバーに送らず、この端末の中で処理します。</p>
     <div class="row toplinks">
       <button class="btn sub" id="tourBtn" type="button">チュートリアル（1分）</button>
@@ -227,29 +238,49 @@ footer a{color:var(--accent)}
     <div class="grid" id="grid"></div>
   </section>
 
+<section class="card data compact" id="data" aria-labelledby="h-data">
+    <h2 id="h-data">データの扱い</h2>
+    <h3>どこで処理するか</h3>
+    <p>顔の照合は、すべてこの端末のブラウザの中で行います。写真はアップロードしません。</p>
+    <h3>この端末に保存するもの</h3>
+    <ul>
+      <li>写真と探した結果は保存しません。ページを閉じると消えます。</li>
+      <li>「この端末に顔の特徴を保存」をオンにしたときだけ、照合用の顔の特徴データと、確認用の小さな顔の画像を、このブラウザに保存します。</li>
+      <li>保存した顔は、「保存した顔を消す」を押すか、ブラウザの閲覧データ（サイトデータ）を消すと削除されます。</li>
+      <li>ほかに保存するのは、チュートリアルを見たかどうかだけです。</li>
+    </ul>
+    <h3>外と通信するとき</h3>
+    <ul>
+      <li>ページを開いたとき、顔を照合するAIのプログラムとモデル（数MB）を、公開の配信サービス（jsDelivr）から読み込みます。写真はこのとき送りません。</li>
+      <li>選んだ写真を共有したときは、自分が選んだ相手に写真が渡ります。</li>
+    </ul>
+  </section>
+
   <section class="card support" id="support" aria-labelledby="h-sup">
-    <h2 id="h-sup">DugoutTools を応援する</h2>
-    <p class="hint">ShotFind をはじめとする DugoutTools のアプリは、無料・広告なしで、少年野球の親が個人で作っています。役に立ったら、コーヒー1杯分の応援をいただけると続ける力になります。</p>
+    <h2 id="h-sup">DugoutToolsを応援する</h2>
+    <p class="hint">ShotFindをはじめとするDugoutToolsのアプリは、無料・広告なしで、少年野球の親が個人で作っています。役に立ったら、コーヒー1杯分の応援をいただけると続ける力になります。</p>
     <a class="bmc" id="bmcLink" href="#" target="_blank" rel="noopener">
       <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 8h13v5a6 6 0 0 1-6 6H10a6 6 0 0 1-6-6zM17 9h1.5a2.5 2.5 0 0 1 0 5H17" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 3c0 1.5 1 1.5 1 3M12 3c0 1.5 1 1.5 1 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      Buy Me a Coffee で応援する
+      Buy Me a Coffeeで応援する
     </a>
   </section>
 
   <section class="series" aria-labelledby="h-series">
-    <h2 id="h-series">DugoutTools のアプリ</h2>
-    <p class="series-lead">少年野球・中学野球の親のための無料ツール。どれも登録なし、データは端末の中で処理します。</p>
+    <h2 id="h-series">DugoutToolsのアプリ</h2>
+    <p class="series-lead">少年野球の現場で使える、無料・登録なしの道具</p>
+    <p class="series-note">記録や写真を、こちらのサーバーに送ることはありません。外に出るのは、自分で共有したり、AIアプリに渡したりしたときだけです。</p>
     <div class="family">
-      <a href="https://yatti3g-byte.github.io/TapScore/"><b>TapScore</b><span>1球ずつタップで記録するスコアブック</span></a>
+      <a href="https://yatti3g-byte.github.io/TapScore/"><b>TapScore</b><span>1球ずつタップして記録するスコアブック</span></a>
       <a href="https://yatti3g-byte.github.io/PitchCount/"><b>PitchCount</b><span>球数制限に合わせた球数カウンター</span></a>
-      <a href="https://yatti3g-byte.github.io/form-note/"><b>FormNote</b><span>コマ送りと角度の測定でフォームを確認</span></a>
-      <a class="here" aria-current="page"><b>ShotFind</b><span>LINEアルバムから、わが子の写真をAIで探す（このアプリ）</span></a>
+      <a href="https://yatti3g-byte.github.io/form-note/"><b>FormNote</b><span>コマ送りと角度の測定で、フォームを確認</span></a>
+      <a class="here" aria-current="page"><b>ShotFind</b><span>チームの試合写真から、わが子の写真を探す</span></a>
     </div>
   </section>
 
   <footer>
-    <p><b>データの扱い：</b>顔の照合は、ブラウザの中で動くオープンソースのAI（Human ライブラリ）で行います。最初に開いたとき、AIのプログラムとモデル（数MB）をインターネットから読み込みますが、写真は送りません。写真が外に出るのは、自分で共有したときだけです。</p>
-    <p class="foot"><span>ShotFind 0.1（試作版）</span><a href="help.html">使い方・Q&amp;A</a><a href="#h-series">DugoutTools のアプリ</a><a href="https://buymeacoffee.com/formnote" target="_blank" rel="noopener">DugoutTools を応援する</a></p>
+    <p class="foot3"><span>ShotFind 0.1 · DugoutTools</span></p>
+    <p class="foot3">DugoutToolsのアプリ：<a href="https://yatti3g-byte.github.io/TapScore/">TapScore</a> ・ <a href="https://yatti3g-byte.github.io/PitchCount/">PitchCount</a> ・ <a href="https://yatti3g-byte.github.io/form-note/">FormNote</a> ・ <b>ShotFind</b></p>
+    <p class="foot3"><a href="https://buymeacoffee.com/formnote" target="_blank" rel="noopener">☕ DugoutToolsを応援する</a></p>
   </footer>
 </main>
 
@@ -814,7 +845,7 @@ function leaveSample() {
 }
 
 const STEPS = [
-  { t: 'ShotFind へようこそ', x: 'チームの試合写真から、わが子が写っている写真だけをAIで探します。サンプルの絵を使って、1分で流れを案内します。' },
+  { t: 'ShotFindへようこそ', x: 'チームの試合写真から、わが子が写っている写真だけをAIで探します。サンプルの絵を使って、1分で流れを案内します。' },
   { el: 'refPick', t: '① わが子の顔写真を登録', x: 'まず、わが子の顔写真を3〜10枚選びます。正面の顔に加えて、帽子をかぶった写真や角度の違う写真があると見つけやすくなります。' },
   { el: 'drop', t: '② 試合写真を選ぶ', x: 'LINEアルバムの写真は、先にLINEでダウンロードしてスマホに保存しておきます。iPhoneは、写真を選ぶ画面で指でなぞるとまとめて選べます。' },
   { el: 'run', t: '③ うちの子をさがす', x: 'このボタンを押すと、AIが1枚ずつ顔を照合します。照合はこの端末の中で行い、写真を外部のサーバーには送りません。' },
