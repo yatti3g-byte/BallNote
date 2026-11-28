@@ -45,6 +45,7 @@
 | `help.html` | 使い方・Q&A |
 | `og.jpg` | リンクを共有したときの画像 |
 | `favicon.svg` / `apple-touch-icon.png` | アイコン |
+| `sitemap.xml` | 検索エンジン向けのページ一覧 |
 
 ## 試作版について
 
